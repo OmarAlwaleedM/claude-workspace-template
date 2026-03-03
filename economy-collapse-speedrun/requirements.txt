@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+websockets
+qrcode[pil]
+httpx
+python-dotenv

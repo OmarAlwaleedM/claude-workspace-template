@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Economy Collapse Speedrun</title>
+<style>
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    height: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #f1f5f9;
+    display: flex;
+    justify-content: center;
+    min-height: 100dvh;
+    padding: 16px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  /* --- Screens --- */
+  .screen {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .screen.active {
+    display: flex;
+    opacity: 1;
+  }
+
+  .screen.fade-in {
+    animation: fadeIn 0.3s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* --- Card --- */
+  .card {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  /* --- Join Screen --- */
+  .game-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    text-align: center;
+    margin-top: 48px;
+    margin-bottom: 4px;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #f87171, #fb923c, #facc15);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .game-subtitle {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    margin-bottom: 40px;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .name-input {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.1rem;
+    border: 2px solid #334155;
+    border-radius: 12px;
+    background: #0f172a;
+    color: #f1f5f9;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .name-input:focus {
+    border-color: #3b82f6;
+  }
+
+  .name-input::placeholder {
+    color: #64748b;
+  }
+
+  .btn-join {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    background: #3b82f6;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+    min-height: 56px;
+  }
+
+  .btn-join:active {
+    background: #2563eb;
+  }
+
+  .btn-join:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .join-error {
+    color: #f87171;
+    text-align: center;
+    font-size: 0.9rem;
+    min-height: 1.4em;
+    margin-top: 4px;
+  }
+
+  /* --- Waiting Screen --- */
+  .waiting-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .waiting-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #3b82f6;
+  }
+
+  .waiting-text {
+    color: #94a3b8;
+    font-size: 1rem;
+  }
+
+  .pulse-dot {
+    width: 12px;
+    height: 12px;
+    background: #3b82f6;
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+    margin-top: 8px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.8); opacity: 0.4; }
+  }
+
+  /* --- Voting Screen --- */
+  .round-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .round-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .timer {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    background: #334155;
+    padding: 4px 12px;
+    border-radius: 8px;
+    min-width: 42px;
+    text-align: center;
+  }
+
+  .timer.urgent {
+    color: #fbbf24;
+    animation: timerPulse 0.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes timerPulse {
+    from { opacity: 1; }
+    to   { opacity: 0.6; }
+  }
+
+  .scenario-headline {
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+
+  .scenario-desc {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  .options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .option-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    min-height: 60px;
+    padding: 12px 16px;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    background: #1e293b;
+    color: #f1f5f9;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.95rem;
+    line-height: 1.3;
+    transition: background 0.15s, border-color 0.15s, opacity 0.2s;
+  }
+
+  .option-btn:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  .option-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .option-btn.selected {
+    opacity: 1 !important;
+    border-color: currentColor;
+  }
+
+  .option-btn[data-label="A"] { color: #22c55e; }
+  .option-btn[data-label="B"] { color: #eab308; }
+  .option-btn[data-label="C"] { color: #ef4444; }
+  .option-btn[data-label="D"] { color: #a855f7; }
+
+  .option-btn[data-label="A"]:active:not(:disabled) { background: rgba(34,197,94,0.1); }
+  .option-btn[data-label="B"]:active:not(:disabled) { background: rgba(234,179,8,0.1); }
+  .option-btn[data-label="C"]:active:not(:disabled) { background: rgba(239,68,68,0.1); }
+  .option-btn[data-label="D"]:active:not(:disabled) { background: rgba(168,85,247,0.1); }
+
+  .option-btn.selected[data-label="A"] { background: rgba(34,197,94,0.15); }
+  .option-btn.selected[data-label="B"] { background: rgba(234,179,8,0.15); }
+  .option-btn.selected[data-label="C"] { background: rgba(239,68,68,0.15); }
+  .option-btn.selected[data-label="D"] { background: rgba(168,85,247,0.15); }
+
+  .option-circle {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.95rem;
+    border: 2px solid currentColor;
+    transition: background 0.15s;
+  }
+
+  .option-btn.selected .option-circle {
+    background: currentColor;
+    color: #0f172a;
+  }
+
+  .option-text {
+    flex: 1;
+  }
+
+  .option-check {
+    font-size: 1.2rem;
+    display: none;
+  }
+
+  .option-btn.selected .option-check {
+    display: inline;
+  }
+
+  .vote-status {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 0.9rem;
+    color: #22c55e;
+    font-weight: 600;
+    min-height: 1.4em;
+  }
+
+  /* --- Loading Screen --- */
+  .loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .loading-text {
+    color: #94a3b8;
+    font-size: 1rem;
+  }
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #334155;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* --- Round Result Screen --- */
+  .result-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .result-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    font-weight: 700;
+  }
+
+  .result-policy {
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .result-destruction {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f87171;
+  }
+
+  .result-destruction-label {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* --- Game Over Screen --- */
+  .gameover-header {
+    font-size: 1.6rem;
+    font-weight: 900;
+    text-align: center;
+    margin-top: 24px;
+    margin-bottom: 4px;
+  }
+
+  .gameover-header.collapsed {
+    color: #ef4444;
+  }
+
+  .gameover-header.survived {
+    color: #22c55e;
+  }
+
+  .gameover-destruction {
+    text-align: center;
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #f87171;
+    margin: 8px 0 4px;
+  }
+
+  .gameover-destruction-label {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+  }
+
+  .awards-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .award-card {
+    flex: 1;
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .award-icon {
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+  }
+
+  .award-title {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+
+  .award-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .award-score {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .leaderboard {
+    background: #1e293b;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .leaderboard-title {
+    padding: 14px 16px 8px;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+
+  .leaderboard-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    gap: 12px;
+    border-top: 1px solid #334155;
+  }
+
+  .leaderboard-row.me {
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  .leaderboard-rank {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #64748b;
+    min-width: 24px;
+  }
+
+  .leaderboard-name {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .leaderboard-score {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #f87171;
+  }
+
+  /* --- Reconnect Banner --- */
+  .reconnect-banner {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #dc2626;
+    color: #fff;
+    text-align: center;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 100;
+    animation: slideDown 0.3s ease;
+  }
+
+  .reconnect-banner.visible {
+    display: block;
+  }
+
+  @keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to   { transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="reconnect-banner" id="reconnectBanner">
+  Connection lost. Reconnecting...
+</div>
+
+<div class="app">
+
+  <!-- Join Screen -->
+  <div class="screen active fade-in" id="screenJoin">
+    <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+      <h1 class="game-title">Economy Collapse Speedrun</h1>
+      <p class="game-subtitle">Enter your name to join</p>
+      <form id="joinForm" class="card">
+        <div class="input-group">
+          <input
+            type="text"
+            id="nameInput"
+            class="name-input"
+            placeholder="Your name"
+            maxlength="15"
+            autocomplete="off"
+            autofocus
+            required
+          />
+          <button type="submit" class="btn-join" id="btnJoin">Join Game</button>
+        </div>
+        <p class="join-error" id="joinError"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Waiting Screen -->
+  <div class="screen" id="screenWaiting">
+    <div class="waiting-content">
+      <div class="waiting-name" id="waitingName"></div>
+      <div class="waiting-text">You're in! Waiting for host to start...</div>
+      <div class="pulse-dot"></div>
+    </div>
+  </div>
+
+  <!-- Voting Screen -->
+  <div class="screen" id="screenVoting">
+    <div class="card">
+      <div class="round-header">
+        <span class="round-label" id="roundLabel">Round 1</span>
+        <span class="timer" id="timer">20</span>
+      </div>
+      <h2 class="scenario-headline" id="scenarioHeadline"></h2>
+      <p class="scenario-desc" id="scenarioDesc"></p>
+      <div class="options-list" id="optionsList"></div>
+      <p class="vote-status" id="voteStatus"></p>
+    </div>
+  </div>
+
+  <!-- Loading Screen -->
+  <div class="screen" id="screenLoading">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Round Result Screen -->
+  <div class="screen" id="screenResult">
+    <div class="result-content">
+      <div class="result-label">Policy Enacted</div>
+      <div class="result-policy" id="resultPolicy"></div>
+      <div class="result-destruction" id="resultDestruction"></div>
+      <div class="result-destruction-label">Destruction Score</div>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div class="screen" id="screenGameOver">
+    <h1 class="gameover-header" id="gameoverHeader"></h1>
+    <div class="gameover-destruction" id="gameoverDestruction"></div>
+    <div class="gameover-destruction-label">Total Destruction</div>
+
+    <div class="awards-row">
+      <div class="award-card">
+        <div class="award-title">MVP Destroyer</div>
+        <div class="award-name" id="mvpName">-</div>
+        <div class="award-score" id="mvpScore"></div>
+      </div>
+      <div class="award-card">
+        <div class="award-title">Boy Scout</div>
+        <div class="award-name" id="scoutName">-</div>
+        <div class="award-score" id="scoutScore"></div>
+      </div>
+    </div>
+
+    <div class="leaderboard" id="leaderboard">
+      <div class="leaderboard-title">Leaderboard</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // --- State ---
+  let playerName = '';
+  let ws = null;
+  let hasVoted = false;
+  let timerInterval = null;
+  let reconnectTimeout = null;
+  let intentionalClose = false;
+
+  // --- DOM refs ---
+  const screens = {
+    join: document.getElementById('screenJoin'),
+    waiting: document.getElementById('screenWaiting'),
+    voting: document.getElementById('screenVoting'),
+    loading: document.getElementById('screenLoading'),
+    result: document.getElementById('screenResult'),
+    gameover: document.getElementById('screenGameOver'),
+  };
+
+  const joinForm = document.getElementById('joinForm');
+  const nameInput = document.getElementById('nameInput');
+  const btnJoin = document.getElementById('btnJoin');
+  const joinError = document.getElementById('joinError');
+  const waitingName = document.getElementById('waitingName');
+  const roundLabel = document.getElementById('roundLabel');
+  const timerEl = document.getElementById('timer');
+  const scenarioHeadline = document.getElementById('scenarioHeadline');
+  const scenarioDesc = document.getElementById('scenarioDesc');
+  const optionsList = document.getElementById('optionsList');
+  const voteStatus = document.getElementById('voteStatus');
+  const loadingText = document.getElementById('loadingText');
+  const resultPolicy = document.getElementById('resultPolicy');
+  const resultDestruction = document.getElementById('resultDestruction');
+  const gameoverHeader = document.getElementById('gameoverHeader');
+  const gameoverDestruction = document.getElementById('gameoverDestruction');
+  const mvpName = document.getElementById('mvpName');
+  const mvpScore = document.getElementById('mvpScore');
+  const scoutName = document.getElementById('scoutName');
+  const scoutScore = document.getElementById('scoutScore');
+  const leaderboard = document.getElementById('leaderboard');
+  const reconnectBanner = document.getElementById('reconnectBanner');
+
+  // --- Screen management ---
+  function showScreen(name) {
+    Object.values(screens).forEach(s => {
+      s.classList.remove('active', 'fade-in');
+    });
+    const target = screens[name];
+    if (target) {
+      target.classList.add('active', 'fade-in');
+    }
+  }
+
+  // --- Timer ---
+  function startTimer(seconds) {
+    clearInterval(timerInterval);
+    let remaining = seconds;
+    timerEl.textContent = remaining;
+    timerEl.classList.remove('urgent');
+
+    timerInterval = setInterval(function () {
+      remaining--;
+      if (remaining <= 0) {
+        remaining = 0;
+        clearInterval(timerInterval);
+      }
+      timerEl.textContent = remaining;
+      if (remaining <= 5) {
+        timerEl.classList.add('urgent');
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+  }
+
+  // --- WebSocket ---
+  function connect() {
+    if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
+      return;
+    }
+
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = protocol + '//' + location.host + '/ws/player/' + encodeURIComponent(playerName);
+    ws = new WebSocket(url);
+
+    ws.onopen = function () {
+      reconnectBanner.classList.remove('visible');
+      clearTimeout(reconnectTimeout);
+    };
+
+    ws.onmessage = function (event) {
+      let msg;
+      try {
+        msg = JSON.parse(event.data);
+      } catch (e) {
+        return;
+      }
+      handleMessage(msg);
+    };
+
+    ws.onclose = function () {
+      if (!intentionalClose) {
+        reconnectBanner.classList.add('visible');
+        reconnectTimeout = setTimeout(function () {
+          connect();
+        }, 2000);
+      }
+    };
+
+    ws.onerror = function () {
+      // onclose will fire after this
+    };
+  }
+
+  function send(obj) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(obj));
+    }
+  }
+
+  // --- Message handler ---
+  function handleMessage(msg) {
+    switch (msg.type) {
+      case 'joined':
+        showScreen('waiting');
+        waitingName.textContent = msg.name;
+        break;
+
+      case 'error':
+        // If still on join screen, show error there
+        if (screens.join.classList.contains('active')) {
+          joinError.textContent = msg.message;
+          btnJoin.disabled = false;
+          btnJoin.textContent = 'Join Game';
+        } else {
+          // Show as a loading-style error
+          loadingText.textContent = msg.message;
+          showScreen('loading');
+        }
+        break;
+
+      case 'loading':
+        loadingText.textContent = msg.message;
+        showScreen('loading');
+        break;
+
+      case 'round_start':
+        hasVoted = false;
+        renderVotingScreen(msg);
+        showScreen('voting');
+        startTimer(20);
+        break;
+
+      case 'vote_confirmed':
+        voteStatus.textContent = 'Vote submitted!';
+        // Highlight confirmed option
+        var btns = optionsList.querySelectorAll('.option-btn');
+        btns.forEach(function (b) {
+          b.disabled = true;
+          if (b.dataset.label === msg.label) {
+            b.classList.add('selected');
+          }
+        });
+        break;
+
+      case 'round_end':
+        stopTimer();
+        resultPolicy.textContent = msg.winning_label + ': ' + msg.winning_policy;
+        resultDestruction.textContent = msg.destruction_score;
+        showScreen('result');
+        break;
+
+      case 'game_over':
+        stopTimer();
+        renderGameOver(msg);
+        showScreen('gameover');
+        break;
+    }
+  }
+
+  // --- Render voting ---
+  function renderVotingScreen(msg) {
+    roundLabel.textContent = 'Round ' + msg.round;
+    scenarioHeadline.textContent = msg.scenario.headline;
+    scenarioDesc.textContent = msg.scenario.description;
+    voteStatus.textContent = '';
+
+    optionsList.innerHTML = '';
+    msg.scenario.options.forEach(function (opt) {
+      var btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.dataset.label = opt.label;
+
+      btn.innerHTML =
+        '<span class="option-circle">' + opt.label + '</span>' +
+        '<span class="option-text">' + escapeHtml(opt.text) + '</span>' +
+        '<span class="option-check">&#10003;</span>';
+
+      btn.addEventListener('click', function () {
+        if (hasVoted) return;
+        hasVoted = true;
+
+        // Visual feedback immediately
+        var allBtns = optionsList.querySelectorAll('.option-btn');
+        allBtns.forEach(function (b) { b.disabled = true; });
+        btn.classList.add('selected');
+        voteStatus.textContent = 'Sending vote...';
+
+        send({ type: 'vote', label: opt.label });
+      });
+
+      optionsList.appendChild(btn);
+    });
+  }
+
+  // --- Render game over ---
+  function renderGameOver(msg) {
+    if (msg.collapsed) {
+      gameoverHeader.textContent = 'ECONOMY COLLAPSED';
+      gameoverHeader.className = 'gameover-header collapsed';
+    } else {
+      gameoverHeader.textContent = 'ECONOMY SURVIVED';
+      gameoverHeader.className = 'gameover-header survived';
+    }
+
+    gameoverDestruction.textContent = msg.destruction_score;
+
+    // Awards
+    if (msg.mvp_destroyer) {
+      mvpName.textContent = msg.mvp_destroyer.name;
+      mvpScore.textContent = msg.mvp_destroyer.score + ' pts';
+    }
+    if (msg.boy_scout) {
+      scoutName.textContent = msg.boy_scout.name;
+      scoutScore.textContent = msg.boy_scout.score + ' pts';
+    }
+
+    // Leaderboard
+    // Remove old rows
+    var oldRows = leaderboard.querySelectorAll('.leaderboard-row');
+    oldRows.forEach(function (r) { r.remove(); });
+
+    if (msg.leaderboard && msg.leaderboard.length > 0) {
+      msg.leaderboard.forEach(function (entry, idx) {
+        var row = document.createElement('div');
+        row.className = 'leaderboard-row';
+        if (entry.name === playerName) {
+          row.classList.add('me');
+        }
+
+        row.innerHTML =
+          '<span class="leaderboard-rank">#' + (idx + 1) + '</span>' +
+          '<span class="leaderboard-name">' + escapeHtml(entry.name) + '</span>' +
+          '<span class="leaderboard-score">' + entry.score + '</span>';
+
+        leaderboard.appendChild(row);
+      });
+    }
+  }
+
+  // --- Util ---
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // --- Join form ---
+  joinForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var name = nameInput.value.trim();
+    if (!name) {
+      joinError.textContent = 'Please enter a name.';
+      return;
+    }
+
+    joinError.textContent = '';
+    playerName = name;
+    btnJoin.disabled = true;
+    btnJoin.textContent = 'Connecting...';
+
+    connect();
+  });
+
+  // Clear error on typing
+  nameInput.addEventListener('input', function () {
+    joinError.textContent = '';
+  });
+})();
+</script>
+
+</body>
+</html>

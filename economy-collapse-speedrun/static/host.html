@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080, initial-scale=1">
+<title>Economy Collapse Speedrun — Host</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #0f172a;
+  color: #f1f5f9;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ===== TOP BAR ===== */
+#top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+  padding: 0 32px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-bottom: 2px solid #334155;
+  position: relative;
+  z-index: 10;
+}
+
+#top-bar .title {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #ef4444, #eab308, #22c55e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+#top-bar .round-counter {
+  font-size: 28px;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+#top-bar .right-section {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+#top-bar .timer {
+  font-size: 36px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #f1f5f9;
+  min-width: 100px;
+  text-align: right;
+}
+
+#top-bar .timer.warning { color: #eab308; }
+#top-bar .timer.critical { color: #ef4444; animation: pulse-text 0.5s ease-in-out infinite alternate; }
+
+#top-bar .destruction-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#top-bar .destruction-score .label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+#top-bar .destruction-score .value {
+  font-size: 28px;
+  font-weight: 900;
+  color: #ef4444;
+}
+
+/* ===== MAIN AREA ===== */
+#main-area {
+  display: flex;
+  height: calc(1080px - 72px - 52px); /* minus top bar and bottom strip */
+  overflow: hidden;
+}
+
+/* --- Economy Dashboard (left 60%) --- */
+#economy-panel {
+  width: 60%;
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+}
+
+.indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.indicator .indicator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.indicator .indicator-label {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+
+.indicator .indicator-value {
+  font-size: 22px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  transition: color 1s ease;
+}
+
+.indicator .bar-track {
+  width: 100%;
+  height: 36px;
+  background: #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  position: relative;
+}
+
+.indicator .bar-fill {
+  height: 100%;
+  border-radius: 7px;
+  transition: width 1s ease, background-color 1s ease;
+  position: relative;
+}
+
+.indicator .bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%);
+  border-radius: 7px 7px 0 0;
+}
+
+/* --- Scenario Panel (right 40%) --- */
+#scenario-panel {
+  width: 40%;
+  padding: 28px 32px;
+  border-left: 2px solid #334155;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#scenario-headline {
+  font-size: 26px;
+  font-weight: 900;
+  color: #f8fafc;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+#scenario-description {
+  font-size: 15px;
+  font-weight: 400;
+  color: #94a3b8;
+  margin-bottom: 20px;
+  line-height: 1.5;
+  max-height: 90px;
+  overflow: hidden;
+}
+
+#options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.option-card {
+  background: #1e293b;
+  border-radius: 10px;
+  padding: 14px 18px;
+  border: 2px solid #334155;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.option-card.winner {
+  border-color: #eab308;
+  box-shadow: 0 0 20px rgba(234,179,8,0.2);
+}
+
+.option-card .option-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.option-card .option-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.option-card[data-label="A"] .option-badge { background: #22c55e; }
+.option-card[data-label="B"] .option-badge { background: #eab308; }
+.option-card[data-label="C"] .option-badge { background: #ef4444; }
+.option-card[data-label="D"] .option-badge { background: #a855f7; }
+
+.option-card .option-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e2e8f0;
+  line-height: 1.3;
+  flex: 1;
+}
+
+.option-card .vote-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.option-card .vote-bar-container.visible {
+  opacity: 1;
+}
+
+.option-card .vote-bar-track {
+  flex: 1;
+  height: 14px;
+  background: #0f172a;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.option-card .vote-bar-fill {
+  height: 100%;
+  border-radius: 7px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+
+.option-card[data-label="A"] .vote-bar-fill { background: #22c55e; }
+.option-card[data-label="B"] .vote-bar-fill { background: #eab308; }
+.option-card[data-label="C"] .vote-bar-fill { background: #ef4444; }
+.option-card[data-label="D"] .vote-bar-fill { background: #a855f7; }
+
+.option-card .vote-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: #94a3b8;
+  min-width: 28px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== BOTTOM NEWS TICKER ===== */
+#bottom-strip {
+  height: 52px;
+  background: #020617;
+  border-top: 2px solid #334155;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+}
+
+#bottom-strip .ticker-label {
+  background: #ef4444;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0 20px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+#bottom-strip .ticker-track {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+#ticker-content {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee 30s linear infinite;
+  font-size: 18px;
+  font-weight: 600;
+  color: #eab308;
+  padding-left: 100%;
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ===== OVERLAYS ===== */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay.active {
+  display: flex;
+}
+
+/* --- Lobby Overlay --- */
+#lobby-overlay {
+  background: #0f172a;
+  flex-direction: column;
+  gap: 24px;
+}
+
+#lobby-overlay .lobby-title {
+  font-size: 56px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  text-align: center;
+  background: linear-gradient(90deg, #ef4444, #eab308, #22c55e, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+#lobby-overlay .lobby-subtitle {
+  font-size: 28px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-align: center;
+}
+
+#lobby-overlay .qr-container {
+  margin: 16px 0;
+  background: #fff;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 0 60px rgba(168, 85, 247, 0.3);
+}
+
+#lobby-overlay .qr-container img {
+  width: 280px;
+  height: 280px;
+  display: block;
+}
+
+#lobby-overlay .player-count {
+  font-size: 24px;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-align: center;
+}
+
+#lobby-overlay .player-count span {
+  color: #22c55e;
+}
+
+#lobby-overlay .player-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+#lobby-overlay .player-chip {
+  background: #1e293b;
+  border: 2px solid #334155;
+  border-radius: 24px;
+  padding: 8px 20px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #e2e8f0;
+  animation: pop-in 0.3s ease;
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+#lobby-overlay .start-btn {
+  margin-top: 12px;
+  padding: 18px 64px;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
+}
+
+#lobby-overlay .start-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 30px rgba(34, 197, 94, 0.5);
+}
+
+#lobby-overlay .start-btn:disabled {
+  background: #334155;
+  color: #64748b;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+#lobby-overlay .start-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+#lobby-overlay .min-players-note {
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* --- Loading Overlay --- */
+#loading-overlay {
+  background: rgba(15, 23, 42, 0.92);
+  flex-direction: column;
+  gap: 24px;
+}
+
+#loading-overlay .loading-spinner {
+  width: 64px;
+  height: 64px;
+  border: 6px solid #334155;
+  border-top-color: #a855f7;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+#loading-overlay .loading-message {
+  font-size: 28px;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-align: center;
+  max-width: 700px;
+  animation: pulse-text 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* --- Round Results Overlay --- */
+#results-overlay {
+  background: rgba(15, 23, 42, 0.95);
+  flex-direction: column;
+  gap: 28px;
+}
+
+#results-overlay .results-title {
+  font-size: 36px;
+  font-weight: 900;
+  color: #eab308;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+#results-overlay .vote-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  height: 200px;
+}
+
+.vote-chart .vote-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 120px;
+}
+
+.vote-chart .vote-bar-col .bar-wrapper {
+  width: 80px;
+  height: 180px;
+  background: #1e293b;
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  border: 1px solid #334155;
+}
+
+.vote-chart .vote-bar-col .bar-inner {
+  width: 100%;
+  border-radius: 6px;
+  transition: height 0.6s ease;
+}
+
+.vote-chart .vote-bar-col[data-label="A"] .bar-inner { background: #22c55e; }
+.vote-chart .vote-bar-col[data-label="B"] .bar-inner { background: #eab308; }
+.vote-chart .vote-bar-col[data-label="C"] .bar-inner { background: #ef4444; }
+.vote-chart .vote-bar-col[data-label="D"] .bar-inner { background: #a855f7; }
+
+.vote-chart .vote-bar-col .bar-label {
+  font-size: 20px;
+  font-weight: 900;
+  color: #e2e8f0;
+}
+
+.vote-chart .vote-bar-col .bar-count {
+  font-size: 16px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+#results-overlay .winning-policy {
+  background: #1e293b;
+  border: 2px solid #eab308;
+  border-radius: 12px;
+  padding: 16px 28px;
+  max-width: 700px;
+  text-align: center;
+}
+
+#results-overlay .winning-policy .wp-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #eab308;
+  margin-bottom: 6px;
+}
+
+#results-overlay .winning-policy .wp-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+#results-overlay .economy-changes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  max-width: 900px;
+}
+
+.economy-changes .change-item {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #334155;
+}
+
+.change-item .change-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94a3b8;
+}
+
+.change-item .change-old {
+  font-size: 16px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.change-item .change-arrow {
+  font-size: 16px;
+  color: #64748b;
+}
+
+.change-item .change-new {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.change-item .change-new.up { color: #22c55e; }
+.change-item .change-new.down { color: #ef4444; }
+.change-item .change-new.same { color: #94a3b8; }
+
+/* --- Game Over Overlay --- */
+#gameover-overlay {
+  background: rgba(15, 23, 42, 0.97);
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  padding: 40px;
+}
+
+#gameover-overlay .go-title {
+  font-size: 64px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+#gameover-overlay .go-title.collapsed {
+  color: #ef4444;
+  animation: screen-shake 0.4s ease-in-out 3;
+}
+
+#gameover-overlay .go-title.survived {
+  color: #22c55e;
+  text-shadow: 0 0 40px rgba(34, 197, 94, 0.4);
+}
+
+@keyframes screen-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-12px) rotate(-1deg); }
+  75% { transform: translateX(12px) rotate(1deg); }
+}
+
+#gameover-overlay .go-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+#gameover-overlay .go-score .go-score-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+#gameover-overlay .go-score .go-score-value {
+  font-size: 72px;
+  font-weight: 900;
+  color: #ef4444;
+  line-height: 1;
+}
+
+#gameover-overlay .go-rounds {
+  font-size: 20px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+#gameover-overlay .awards {
+  display: flex;
+  gap: 40px;
+  margin: 8px 0;
+}
+
+.awards .award-card {
+  background: #1e293b;
+  border-radius: 16px;
+  padding: 24px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid #334155;
+  min-width: 260px;
+}
+
+.award-card .award-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.award-card .award-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.award-card .award-name {
+  font-size: 28px;
+  font-weight: 900;
+  color: #f1f5f9;
+}
+
+.award-card .award-score {
+  font-size: 16px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.award-card.mvp { border-color: #ef4444; }
+.award-card.mvp .award-title { color: #ef4444; }
+
+.award-card.scout { border-color: #22c55e; }
+.award-card.scout .award-title { color: #22c55e; }
+
+#gameover-overlay .leaderboard {
+  width: 100%;
+  max-width: 600px;
+}
+
+.leaderboard table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard th {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #64748b;
+  padding: 8px 16px;
+  text-align: left;
+  border-bottom: 2px solid #334155;
+}
+
+.leaderboard th:last-child {
+  text-align: right;
+}
+
+.leaderboard td {
+  padding: 10px 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #e2e8f0;
+  border-bottom: 1px solid #1e293b;
+}
+
+.leaderboard td:first-child {
+  color: #94a3b8;
+  font-size: 16px;
+  width: 40px;
+}
+
+.leaderboard td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #ef4444;
+  font-weight: 900;
+}
+
+.leaderboard tr:first-child td {
+  color: #eab308;
+  font-weight: 900;
+}
+
+.leaderboard tr:first-child td:last-child {
+  color: #ef4444;
+}
+
+/* ===== ROUND TIMER (top bar local countdown) ===== */
+#round-timer {
+  font-size: 20px;
+  font-weight: 700;
+  color: #94a3b8;
+  min-width: 40px;
+  text-align: center;
+}
+
+#round-timer.urgent {
+  color: #ef4444;
+  animation: pulse-text 0.5s ease-in-out infinite alternate;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div id="top-bar">
+  <div class="title">Economy Collapse Speedrun</div>
+  <div class="round-counter" id="round-counter">ROUND 0</div>
+  <div class="right-section">
+    <div id="round-timer"></div>
+    <div class="timer" id="game-timer">05:00</div>
+    <div class="destruction-score">
+      <div class="label">Destruction</div>
+      <div class="value" id="destruction-value">0</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN AREA ===== -->
+<div id="main-area">
+
+  <!-- Economy Dashboard -->
+  <div id="economy-panel">
+    <div class="indicator" data-key="gdp" data-mode="higher-better">
+      <div class="indicator-header">
+        <span class="indicator-label">GDP</span>
+        <span class="indicator-value" id="val-gdp">75</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="bar-gdp" style="width:75%"></div></div>
+    </div>
+    <div class="indicator" data-key="employment" data-mode="higher-better">
+      <div class="indicator-header">
+        <span class="indicator-label">Employment</span>
+        <span class="indicator-value" id="val-employment">80</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="bar-employment" style="width:80%"></div></div>
+    </div>
+    <div class="indicator" data-key="inflation" data-mode="higher-worse">
+      <div class="indicator-header">
+        <span class="indicator-label">Inflation</span>
+        <span class="indicator-value" id="val-inflation">20</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="bar-inflation" style="width:20%"></div></div>
+    </div>
+    <div class="indicator" data-key="public_trust" data-mode="higher-better">
+      <div class="indicator-header">
+        <span class="indicator-label">Public Trust</span>
+        <span class="indicator-value" id="val-public_trust">70</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="bar-public_trust" style="width:70%"></div></div>
+    </div>
+    <div class="indicator" data-key="trade_balance" data-mode="higher-better">
+      <div class="indicator-header">
+        <span class="indicator-label">Trade Balance</span>
+        <span class="indicator-value" id="val-trade_balance">60</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="bar-trade_balance" style="width:60%"></div></div>
+    </div>
+    <div class="indicator" data-key="national_debt" data-mode="higher-worse">
+      <div class="indicator-header">
+        <span class="indicator-label">National Debt</span>
+        <span class="indicator-value" id="val-national_debt">30</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="bar-national_debt" style="width:30%"></div></div>
+    </div>
+  </div>
+
+  <!-- Scenario Panel -->
+  <div id="scenario-panel">
+    <div id="scenario-headline">Waiting for game to start...</div>
+    <div id="scenario-description"></div>
+    <div id="options-list"></div>
+  </div>
+</div>
+
+<!-- ===== BOTTOM NEWS TICKER ===== -->
+<div id="bottom-strip">
+  <div class="ticker-label">Breaking</div>
+  <div class="ticker-track">
+    <div id="ticker-content">Welcome to Economy Collapse Speedrun. Scan the QR code to join!</div>
+  </div>
+</div>
+
+<!-- ===== OVERLAYS ===== -->
+
+<!-- Lobby -->
+<div class="overlay active" id="lobby-overlay">
+  <div class="lobby-title">Economy Collapse<br>Speedrun</div>
+  <div class="lobby-subtitle">Scan to join!</div>
+  <div class="qr-container">
+    <img id="qr-img" alt="QR Code" src="" />
+  </div>
+  <div class="player-count">Players: <span id="lobby-count">0</span></div>
+  <div class="player-list" id="lobby-players"></div>
+  <button class="start-btn" id="start-btn" disabled>Waiting for players...</button>
+  <div class="min-players-note" id="min-note"></div>
+</div>
+
+<!-- Loading -->
+<div class="overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-message" id="loading-message">Loading...</div>
+</div>
+
+<!-- Round Results -->
+<div class="overlay" id="results-overlay">
+  <div class="results-title" id="results-title">Round Results</div>
+  <div class="vote-chart" id="results-vote-chart"></div>
+  <div class="winning-policy" id="results-winning">
+    <div class="wp-label">Winning Policy</div>
+    <div class="wp-text" id="results-wp-text"></div>
+  </div>
+  <div class="economy-changes" id="results-changes"></div>
+</div>
+
+<!-- Game Over -->
+<div class="overlay" id="gameover-overlay">
+  <div class="go-title" id="go-title"></div>
+  <div class="go-score">
+    <div class="go-score-label">Destruction Score</div>
+    <div class="go-score-value" id="go-score-value">0</div>
+  </div>
+  <div class="go-rounds" id="go-rounds"></div>
+  <div class="awards" id="go-awards"></div>
+  <div class="leaderboard" id="go-leaderboard"></div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ===== CONFIG =====
+  const ROUND_TIME_SECONDS = 20;
+
+  // ===== STATE =====
+  let currentState = 'lobby'; // lobby | playing | results | gameover
+  let roundTimerInterval = null;
+  let roundSecondsLeft = ROUND_TIME_SECONDS;
+  let votingActive = false;
+  let totalPlayers = 0;
+
+  // ===== DOM REFS =====
+  const $roundCounter = document.getElementById('round-counter');
+  const $gameTimer = document.getElementById('game-timer');
+  const $roundTimer = document.getElementById('round-timer');
+  const $destructionValue = document.getElementById('destruction-value');
+
+  const $scenarioHeadline = document.getElementById('scenario-headline');
+  const $scenarioDescription = document.getElementById('scenario-description');
+  const $optionsList = document.getElementById('options-list');
+
+  const $tickerContent = document.getElementById('ticker-content');
+
+  const $lobbyOverlay = document.getElementById('lobby-overlay');
+  const $loadingOverlay = document.getElementById('loading-overlay');
+  const $resultsOverlay = document.getElementById('results-overlay');
+  const $gameoverOverlay = document.getElementById('gameover-overlay');
+
+  const $lobbyCount = document.getElementById('lobby-count');
+  const $lobbyPlayers = document.getElementById('lobby-players');
+  const $startBtn = document.getElementById('start-btn');
+  const $minNote = document.getElementById('min-note');
+  const $loadingMessage = document.getElementById('loading-message');
+  const $qrImg = document.getElementById('qr-img');
+
+  // ===== HELPERS =====
+
+  function showOverlay(id) {
+    [$lobbyOverlay, $loadingOverlay, $resultsOverlay, $gameoverOverlay].forEach(el => {
+      el.classList.remove('active');
+    });
+    if (id) {
+      document.getElementById(id).classList.add('active');
+    }
+  }
+
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  function getBarColor(value, mode) {
+    if (mode === 'higher-worse') {
+      // Inflation, National Debt: high = bad
+      if (value >= 60) return '#ef4444';
+      if (value >= 30) return '#eab308';
+      return '#22c55e';
+    } else {
+      // GDP, Employment, Public Trust, Trade Balance: high = good
+      if (value >= 60) return '#22c55e';
+      if (value >= 30) return '#eab308';
+      return '#ef4444';
+    }
+  }
+
+  function updateIndicator(key, value) {
+    const indicator = document.querySelector(`.indicator[data-key="${key}"]`);
+    if (!indicator) return;
+    const mode = indicator.dataset.mode;
+    const color = getBarColor(value, mode);
+
+    const valEl = document.getElementById('val-' + key);
+    const barEl = document.getElementById('bar-' + key);
+    if (valEl) {
+      valEl.textContent = value;
+      valEl.style.color = color;
+    }
+    if (barEl) {
+      barEl.style.width = value + '%';
+      barEl.style.backgroundColor = color;
+    }
+  }
+
+  function updateEconomy(economy) {
+    if (!economy) return;
+    const keys = ['gdp', 'employment', 'inflation', 'public_trust', 'trade_balance', 'national_debt'];
+    keys.forEach(k => {
+      if (economy[k] !== undefined) updateIndicator(k, economy[k]);
+    });
+  }
+
+  function startRoundTimer() {
+    clearInterval(roundTimerInterval);
+    roundSecondsLeft = ROUND_TIME_SECONDS;
+    $roundTimer.textContent = roundSecondsLeft + 's';
+    $roundTimer.classList.remove('urgent');
+
+    roundTimerInterval = setInterval(() => {
+      roundSecondsLeft--;
+      if (roundSecondsLeft < 0) roundSecondsLeft = 0;
+      $roundTimer.textContent = roundSecondsLeft + 's';
+
+      if (roundSecondsLeft <= 5) {
+        $roundTimer.classList.add('urgent');
+      } else {
+        $roundTimer.classList.remove('urgent');
+      }
+
+      if (roundSecondsLeft <= 0) {
+        clearInterval(roundTimerInterval);
+      }
+    }, 1000);
+  }
+
+  function stopRoundTimer() {
+    clearInterval(roundTimerInterval);
+    $roundTimer.textContent = '';
+    $roundTimer.classList.remove('urgent');
+  }
+
+  function renderOptions(options) {
+    $optionsList.innerHTML = '';
+    if (!options || options.length === 0) return;
+
+    options.forEach(opt => {
+      const card = document.createElement('div');
+      card.className = 'option-card';
+      card.dataset.label = opt.label;
+      card.innerHTML = `
+        <div class="option-top">
+          <div class="option-badge">${opt.label}</div>
+          <div class="option-text">${opt.text}</div>
+        </div>
+        <div class="vote-bar-container" id="vbc-${opt.label}">
+          <div class="vote-bar-track">
+            <div class="vote-bar-fill" id="vbf-${opt.label}"></div>
+          </div>
+          <div class="vote-count" id="vc-${opt.label}">0</div>
+        </div>
+      `;
+      $optionsList.appendChild(card);
+    });
+  }
+
+  function updateVoteBars(votes, totalVoted, totalPlayersCount) {
+    if (!votes) return;
+    const maxVotes = Math.max(1, totalPlayersCount || 1);
+
+    ['A', 'B', 'C', 'D'].forEach(label => {
+      const container = document.getElementById('vbc-' + label);
+      const fill = document.getElementById('vbf-' + label);
+      const count = document.getElementById('vc-' + label);
+
+      if (container) container.classList.add('visible');
+      if (fill) {
+        const pct = ((votes[label] || 0) / maxVotes) * 100;
+        fill.style.width = pct + '%';
+      }
+      if (count) count.textContent = votes[label] || 0;
+    });
+
+    votingActive = true;
+  }
+
+  function setTicker(items) {
+    if (!items || items.length === 0) return;
+    const text = items.join('  \u2022  ');
+    // Duplicate for seamless loop
+    $tickerContent.textContent = text + '  \u2022  ' + text;
+  }
+
+  // ===== ROUND RESULTS RENDERING =====
+
+  function showRoundResults(data) {
+    // Title
+    document.getElementById('results-title').textContent = 'Round ' + data.round + ' Results';
+
+    // Vote chart
+    const chartEl = document.getElementById('results-vote-chart');
+    chartEl.innerHTML = '';
+    const maxVote = Math.max(1, ...Object.values(data.vote_counts || {}));
+
+    ['A', 'B', 'C', 'D'].forEach(label => {
+      const count = (data.vote_counts || {})[label] || 0;
+      const pct = (count / maxVote) * 100;
+      const col = document.createElement('div');
+      col.className = 'vote-bar-col';
+      col.dataset.label = label;
+      const isWinner = label === data.winning_label;
+      col.innerHTML = `
+        <div class="bar-count">${count}</div>
+        <div class="bar-wrapper">
+          <div class="bar-inner" style="height: ${pct}%"></div>
+        </div>
+        <div class="bar-label" style="${isWinner ? 'color:#eab308' : ''}">${label}${isWinner ? ' \u2605' : ''}</div>
+      `;
+      chartEl.appendChild(col);
+    });
+
+    // Winning policy
+    document.getElementById('results-wp-text').textContent = data.winning_policy || 'No policy';
+
+    // Economy changes
+    const changesEl = document.getElementById('results-changes');
+    changesEl.innerHTML = '';
+    const keys = ['gdp', 'employment', 'inflation', 'public_trust', 'trade_balance', 'national_debt'];
+    const labels = { gdp: 'GDP', employment: 'Employment', inflation: 'Inflation', public_trust: 'Public Trust', trade_balance: 'Trade Balance', national_debt: 'National Debt' };
+
+    keys.forEach(k => {
+      const oldVal = (data.old_economy || {})[k];
+      const newVal = (data.new_economy || {})[k];
+      if (oldVal === undefined || newVal === undefined) return;
+
+      const diff = newVal - oldVal;
+      let cls = 'same';
+      if (diff > 0) cls = 'up';
+      if (diff < 0) cls = 'down';
+
+      // For inverted indicators, swap coloring
+      if (k === 'inflation' || k === 'national_debt') {
+        if (diff > 0) cls = 'down'; // going up is bad
+        if (diff < 0) cls = 'up';   // going down is good
+      }
+
+      const item = document.createElement('div');
+      item.className = 'change-item';
+      item.innerHTML = `
+        <span class="change-label">${labels[k]}</span>
+        <span class="change-old">${oldVal}</span>
+        <span class="change-arrow">\u2192</span>
+        <span class="change-new ${cls}">${newVal}</span>
+      `;
+      changesEl.appendChild(item);
+    });
+
+    showOverlay('results-overlay');
+  }
+
+  // ===== GAME OVER RENDERING =====
+
+  function showGameOver(data) {
+    const titleEl = document.getElementById('go-title');
+    if (data.collapsed) {
+      titleEl.textContent = 'Economy Collapsed';
+      titleEl.className = 'go-title collapsed';
+    } else {
+      titleEl.textContent = 'Economy Survived';
+      titleEl.className = 'go-title survived';
+    }
+
+    document.getElementById('go-score-value').textContent = data.destruction_score || 0;
+    document.getElementById('go-rounds').textContent = 'Rounds Played: ' + (data.rounds_played || 0);
+
+    // Awards
+    const awardsEl = document.getElementById('go-awards');
+    awardsEl.innerHTML = '';
+
+    if (data.mvp_destroyer) {
+      const card = document.createElement('div');
+      card.className = 'award-card mvp';
+      card.innerHTML = `
+        <div class="award-icon">\uD83C\uDFC6</div>
+        <div class="award-title">MVP Destroyer</div>
+        <div class="award-name">${data.mvp_destroyer.name}</div>
+        <div class="award-score">Score: ${data.mvp_destroyer.score}</div>
+      `;
+      awardsEl.appendChild(card);
+    }
+
+    if (data.boy_scout) {
+      const card = document.createElement('div');
+      card.className = 'award-card scout';
+      card.innerHTML = `
+        <div class="award-icon">\uD83C\uDFC5</div>
+        <div class="award-title">Boy Scout</div>
+        <div class="award-name">${data.boy_scout.name}</div>
+        <div class="award-score">Score: ${data.boy_scout.score}</div>
+      `;
+      awardsEl.appendChild(card);
+    }
+
+    // Leaderboard
+    const lbEl = document.getElementById('go-leaderboard');
+    lbEl.innerHTML = '';
+
+    if (data.leaderboard && data.leaderboard.length > 0) {
+      let html = '<table><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead><tbody>';
+      data.leaderboard.forEach((entry, i) => {
+        html += `<tr><td>${i + 1}</td><td>${entry.name}</td><td>${entry.score}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      lbEl.innerHTML = html;
+    }
+
+    stopRoundTimer();
+    showOverlay('gameover-overlay');
+    currentState = 'gameover';
+  }
+
+  // ===== LOBBY =====
+
+  function updateLobby(data) {
+    $lobbyCount.textContent = data.player_count || 0;
+    totalPlayers = data.player_count || 0;
+
+    $lobbyPlayers.innerHTML = '';
+    (data.players || []).forEach(name => {
+      const chip = document.createElement('div');
+      chip.className = 'player-chip';
+      chip.textContent = name;
+      $lobbyPlayers.appendChild(chip);
+    });
+
+    const minPlayers = data.min_players || 2;
+    if (data.player_count >= minPlayers) {
+      $startBtn.disabled = false;
+      $startBtn.textContent = 'Start Game';
+    } else {
+      $startBtn.disabled = true;
+      $startBtn.textContent = `Waiting for players... (${data.player_count}/${minPlayers})`;
+    }
+    $minNote.textContent = `Minimum ${minPlayers} players required`;
+  }
+
+  // ===== START BUTTON =====
+  $startBtn.addEventListener('click', async () => {
+    if ($startBtn.disabled) return;
+    $startBtn.disabled = true;
+    $startBtn.textContent = 'Starting...';
+
+    try {
+      const res = await fetch('/start', { method: 'POST' });
+      const json = await res.json();
+      if (json.error) {
+        $startBtn.disabled = false;
+        $startBtn.textContent = json.error;
+        setTimeout(() => { $startBtn.textContent = 'Start Game'; $startBtn.disabled = false; }, 2000);
+      }
+    } catch (e) {
+      $startBtn.disabled = false;
+      $startBtn.textContent = 'Error — Try Again';
+      setTimeout(() => { $startBtn.textContent = 'Start Game'; $startBtn.disabled = false; }, 2000);
+    }
+  });
+
+  // ===== WEBSOCKET =====
+
+  function connect() {
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${location.host}/ws/host`);
+
+    ws.onopen = () => {
+      console.log('[WS] Connected to host');
+      // Load QR code
+      $qrImg.src = '/qr';
+    };
+
+    ws.onmessage = (event) => {
+      let msg;
+      try {
+        msg = JSON.parse(event.data);
+      } catch (e) {
+        console.error('[WS] Bad JSON:', event.data);
+        return;
+      }
+
+      handleMessage(msg);
+    };
+
+    ws.onclose = () => {
+      console.log('[WS] Disconnected — reconnecting in 2s...');
+      setTimeout(connect, 2000);
+    };
+
+    ws.onerror = (err) => {
+      console.error('[WS] Error:', err);
+    };
+  }
+
+  function handleMessage(msg) {
+    switch (msg.type) {
+
+      case 'lobby_update':
+        updateLobby(msg);
+        if (currentState === 'lobby') {
+          showOverlay('lobby-overlay');
+        }
+        break;
+
+      case 'qr_url':
+        // QR is loaded from /qr endpoint directly
+        break;
+
+      case 'loading':
+        $loadingMessage.textContent = msg.message || 'Loading...';
+        showOverlay('loading-overlay');
+        break;
+
+      case 'round_start':
+        currentState = 'playing';
+        votingActive = false;
+        showOverlay(null); // hide all overlays
+
+        // Update round counter
+        $roundCounter.textContent = 'ROUND ' + (msg.round || 0);
+
+        // Update economy
+        updateEconomy(msg.economy);
+
+        // Update destruction score
+        if (msg.destruction_score !== undefined) {
+          $destructionValue.textContent = msg.destruction_score;
+        }
+
+        // Update game timer
+        if (msg.time_remaining !== undefined) {
+          $gameTimer.textContent = formatTime(msg.time_remaining);
+          updateTimerStyle(msg.time_remaining);
+        }
+
+        // Render scenario
+        if (msg.scenario) {
+          $scenarioHeadline.textContent = msg.scenario.headline || '';
+          $scenarioDescription.textContent = msg.scenario.description || '';
+          renderOptions(msg.scenario.options || []);
+
+          // Set news ticker
+          if (msg.scenario.news_ticker && msg.scenario.news_ticker.length > 0) {
+            setTicker(msg.scenario.news_ticker);
+          }
+        }
+
+        // Start local round countdown
+        startRoundTimer();
+        break;
+
+      case 'vote_update':
+        totalPlayers = msg.total_players || totalPlayers;
+        updateVoteBars(msg.votes, msg.total_voted, msg.total_players);
+        break;
+
+      case 'round_end':
+        currentState = 'results';
+        stopRoundTimer();
+
+        // Update economy immediately
+        updateEconomy(msg.new_economy);
+        if (msg.destruction_score !== undefined) {
+          $destructionValue.textContent = msg.destruction_score;
+        }
+
+        showRoundResults(msg);
+        // Results overlay stays visible; the server sends round_start after ~3s delay
+        break;
+
+      case 'timer':
+        if (msg.time_remaining !== undefined) {
+          $gameTimer.textContent = formatTime(msg.time_remaining);
+          updateTimerStyle(msg.time_remaining);
+        }
+        break;
+
+      case 'game_over':
+        showGameOver(msg);
+        break;
+
+      default:
+        console.log('[WS] Unknown message type:', msg.type);
+    }
+  }
+
+  function updateTimerStyle(remaining) {
+    $gameTimer.classList.remove('warning', 'critical');
+    if (remaining <= 30) {
+      $gameTimer.classList.add('critical');
+    } else if (remaining <= 60) {
+      $gameTimer.classList.add('warning');
+    }
+  }
+
+  // ===== INIT =====
+  connect();
+
+})();
+</script>
+
+</body>
+</html>
