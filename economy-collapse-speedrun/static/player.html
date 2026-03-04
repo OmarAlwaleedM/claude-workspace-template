@@ -2,564 +2,312 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>Economy Collapse Speedrun</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
-  html, body {
-    height: 100%;
-    overflow-x: hidden;
-  }
-
-  body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0f172a;
-    color: #f1f5f9;
-    display: flex;
-    justify-content: center;
-    min-height: 100dvh;
-    padding: 16px;
-  }
-
-  .app {
-    width: 100%;
-    max-width: 500px;
-    display: flex;
-    flex-direction: column;
-    min-height: 100%;
-  }
-
-  /* --- Screens --- */
-  .screen {
-    display: none;
-    flex-direction: column;
-    flex: 1;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .screen.active {
-    display: flex;
-    opacity: 1;
-  }
-
-  .screen.fade-in {
-    animation: fadeIn 0.3s ease forwards;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* --- Card --- */
-  .card {
-    background: #1e293b;
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-  }
-
-  /* --- Join Screen --- */
-  .game-title {
-    font-size: 1.6rem;
-    font-weight: 800;
-    text-align: center;
-    margin-top: 48px;
-    margin-bottom: 4px;
-    line-height: 1.2;
-    background: linear-gradient(135deg, #f87171, #fb923c, #facc15);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .game-subtitle {
-    text-align: center;
-    color: #94a3b8;
-    font-size: 0.95rem;
-    margin-bottom: 40px;
-  }
-
-  .input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .name-input {
-    width: 100%;
-    padding: 16px;
-    font-size: 1.1rem;
-    border: 2px solid #334155;
-    border-radius: 12px;
-    background: #0f172a;
-    color: #f1f5f9;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .name-input:focus {
-    border-color: #3b82f6;
-  }
-
-  .name-input::placeholder {
-    color: #64748b;
-  }
-
-  .btn-join {
-    width: 100%;
-    padding: 16px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    border: none;
-    border-radius: 12px;
-    background: #3b82f6;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.2s, opacity 0.2s;
-    min-height: 56px;
-  }
-
-  .btn-join:active {
-    background: #2563eb;
-  }
-
-  .btn-join:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .join-error {
-    color: #f87171;
-    text-align: center;
-    font-size: 0.9rem;
-    min-height: 1.4em;
-    margin-top: 4px;
-  }
-
-  /* --- Waiting Screen --- */
-  .waiting-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    gap: 16px;
-    text-align: center;
-  }
-
-  .waiting-name {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #3b82f6;
-  }
-
-  .waiting-text {
-    color: #94a3b8;
-    font-size: 1rem;
-  }
-
-  .pulse-dot {
-    width: 12px;
-    height: 12px;
-    background: #3b82f6;
-    border-radius: 50%;
-    animation: pulse 1.5s ease-in-out infinite;
-    margin-top: 8px;
-  }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50%      { transform: scale(1.8); opacity: 0.4; }
-  }
-
-  /* --- Voting Screen --- */
-  .round-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-
-  .round-label {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .timer {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #f1f5f9;
-    background: #334155;
-    padding: 4px 12px;
-    border-radius: 8px;
-    min-width: 42px;
-    text-align: center;
-  }
-
-  .timer.urgent {
-    color: #fbbf24;
-    animation: timerPulse 0.5s ease-in-out infinite alternate;
-  }
-
-  @keyframes timerPulse {
-    from { opacity: 1; }
-    to   { opacity: 0.6; }
-  }
-
-  .scenario-headline {
-    font-size: 1.25rem;
-    font-weight: 800;
-    line-height: 1.3;
-    margin-bottom: 8px;
-  }
-
-  .scenario-desc {
-    font-size: 0.9rem;
-    color: #94a3b8;
-    line-height: 1.5;
-    margin-bottom: 20px;
-  }
-
-  .options-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .option-btn {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    width: 100%;
-    min-height: 60px;
-    padding: 12px 16px;
-    border: 2px solid transparent;
-    border-radius: 14px;
-    background: #1e293b;
-    color: #f1f5f9;
-    cursor: pointer;
-    text-align: left;
-    font-size: 0.95rem;
-    line-height: 1.3;
-    transition: background 0.15s, border-color 0.15s, opacity 0.2s;
-  }
-
-  .option-btn:active:not(:disabled) {
-    transform: scale(0.98);
-  }
-
-  .option-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  .option-btn.selected {
-    opacity: 1 !important;
-    border-color: currentColor;
-  }
-
-  .option-btn[data-label="A"] { color: #22c55e; }
-  .option-btn[data-label="B"] { color: #eab308; }
-  .option-btn[data-label="C"] { color: #ef4444; }
-  .option-btn[data-label="D"] { color: #a855f7; }
-
-  .option-btn[data-label="A"]:active:not(:disabled) { background: rgba(34,197,94,0.1); }
-  .option-btn[data-label="B"]:active:not(:disabled) { background: rgba(234,179,8,0.1); }
-  .option-btn[data-label="C"]:active:not(:disabled) { background: rgba(239,68,68,0.1); }
-  .option-btn[data-label="D"]:active:not(:disabled) { background: rgba(168,85,247,0.1); }
-
-  .option-btn.selected[data-label="A"] { background: rgba(34,197,94,0.15); }
-  .option-btn.selected[data-label="B"] { background: rgba(234,179,8,0.15); }
-  .option-btn.selected[data-label="C"] { background: rgba(239,68,68,0.15); }
-  .option-btn.selected[data-label="D"] { background: rgba(168,85,247,0.15); }
-
-  .option-circle {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 0.95rem;
-    border: 2px solid currentColor;
-    transition: background 0.15s;
-  }
-
-  .option-btn.selected .option-circle {
-    background: currentColor;
-    color: #0f172a;
-  }
-
-  .option-text {
-    flex: 1;
-  }
-
-  .option-check {
-    font-size: 1.2rem;
-    display: none;
-  }
-
-  .option-btn.selected .option-check {
-    display: inline;
-  }
-
-  .vote-status {
-    text-align: center;
-    margin-top: 16px;
-    font-size: 0.9rem;
-    color: #22c55e;
-    font-weight: 600;
-    min-height: 1.4em;
-  }
-
-  /* --- Loading Screen --- */
-  .loading-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    gap: 20px;
-    text-align: center;
-  }
-
-  .loading-text {
-    color: #94a3b8;
-    font-size: 1rem;
-  }
-
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #334155;
-    border-top-color: #3b82f6;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* --- Round Result Screen --- */
-  .result-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    gap: 16px;
-    text-align: center;
-  }
-
-  .result-label {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #94a3b8;
-    font-weight: 700;
-  }
-
-  .result-policy {
-    font-size: 1.2rem;
-    font-weight: 700;
-    line-height: 1.3;
-  }
-
-  .result-destruction {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #f87171;
-  }
-
-  .result-destruction-label {
-    font-size: 0.8rem;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  /* --- Game Over Screen --- */
-  .gameover-header {
-    font-size: 1.6rem;
-    font-weight: 900;
-    text-align: center;
-    margin-top: 24px;
-    margin-bottom: 4px;
-  }
-
-  .gameover-header.collapsed {
-    color: #ef4444;
-  }
-
-  .gameover-header.survived {
-    color: #22c55e;
-  }
-
-  .gameover-destruction {
-    text-align: center;
-    font-size: 2.2rem;
-    font-weight: 900;
-    color: #f87171;
-    margin: 8px 0 4px;
-  }
-
-  .gameover-destruction-label {
-    text-align: center;
-    font-size: 0.8rem;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 20px;
-  }
-
-  .awards-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-
-  .award-card {
-    flex: 1;
-    background: #1e293b;
-    border-radius: 12px;
-    padding: 14px;
-    text-align: center;
-  }
-
-  .award-icon {
-    font-size: 1.4rem;
-    margin-bottom: 4px;
-  }
-
-  .award-title {
-    font-size: 0.7rem;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 4px;
-  }
-
-  .award-name {
-    font-size: 0.95rem;
-    font-weight: 700;
-  }
-
-  .award-score {
-    font-size: 0.8rem;
-    color: #64748b;
-  }
-
-  .leaderboard {
-    background: #1e293b;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  .leaderboard-title {
-    padding: 14px 16px 8px;
-    font-size: 0.8rem;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-  }
-
-  .leaderboard-row {
-    display: flex;
-    align-items: center;
-    padding: 10px 16px;
-    gap: 12px;
-    border-top: 1px solid #334155;
-  }
-
-  .leaderboard-row.me {
-    background: rgba(59, 130, 246, 0.1);
-  }
-
-  .leaderboard-rank {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #64748b;
-    min-width: 24px;
-  }
-
-  .leaderboard-name {
-    flex: 1;
-    font-size: 0.95rem;
-    font-weight: 600;
-  }
-
-  .leaderboard-score {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #f87171;
-  }
-
-  /* --- Reconnect Banner --- */
-  .reconnect-banner {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: #dc2626;
-    color: #fff;
-    text-align: center;
-    padding: 10px 16px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    z-index: 100;
-    animation: slideDown 0.3s ease;
-  }
-
-  .reconnect-banner.visible {
-    display: block;
-  }
-
-  @keyframes slideDown {
-    from { transform: translateY(-100%); }
-    to   { transform: translateY(0); }
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow-x: hidden; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: #080c14; color: #f1f5f9;
+  display: flex; justify-content: center; min-height: 100dvh;
+  padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+.app { width: 100%; max-width: 500px; display: flex; flex-direction: column; min-height: 100%; }
+
+/* Screens */
+.screen { display: none; flex-direction: column; flex: 1; opacity: 0; transition: opacity 0.3s ease; }
+.screen.active { display: flex; opacity: 1; }
+.screen.fade-in { animation: fadeIn 0.3s ease forwards; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* Card */
+.card {
+  background: #111827; border: 1px solid #1e293b;
+  border-radius: 20px; padding: 28px; margin-bottom: 16px;
+}
+
+/* ===================== JOIN SCREEN ===================== */
+.game-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2rem; font-weight: 900; text-align: center;
+  margin-top: 48px; margin-bottom: 6px; line-height: 1.15;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ef4444, #f59e0b, #10b981);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.game-subtitle {
+  text-align: center; color: #64748b; font-size: 0.9rem;
+  margin-bottom: 48px; letter-spacing: 0.02em;
+}
+.input-group { display: flex; flex-direction: column; gap: 14px; }
+.name-input {
+  width: 100%; padding: 18px 20px; font-size: 1.1rem;
+  font-family: 'Outfit', sans-serif; font-weight: 600;
+  border: 2px solid #1e293b; border-radius: 14px;
+  background: #080c14; color: #f1f5f9; outline: none;
+  transition: border-color 0.2s;
+}
+.name-input:focus { border-color: #3b82f6; }
+.name-input::placeholder { color: #64748b; font-weight: 400; }
+.btn-join {
+  width: 100%; padding: 18px; font-size: 1.15rem; font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+  border: none; border-radius: 14px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff; cursor: pointer; min-height: 60px;
+  letter-spacing: 0.01em;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.btn-join:active:not(:disabled) { transform: scale(0.98); }
+.btn-join:disabled { opacity: 0.45; cursor: not-allowed; }
+.join-error {
+  color: #ef4444; text-align: center; font-size: 0.9rem;
+  min-height: 1.4em; margin-top: 8px; font-weight: 600;
+}
+
+/* ===================== WAITING / STATUS SCREENS ===================== */
+.status-content {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex: 1; gap: 16px; text-align: center; padding: 24px;
+}
+.status-icon { font-size: 3.5rem; margin-bottom: 4px; }
+.status-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em;
+}
+.status-title.parliament { color: #a855f7; }
+.status-title.people { color: #3b82f6; }
+.status-text { color: #64748b; font-size: 1rem; line-height: 1.6; max-width: 320px; }
+.pulse-dot {
+  width: 12px; height: 12px; background: #3b82f6;
+  border-radius: 50%; animation: pulse 1.5s ease-in-out infinite;
+  margin-top: 8px;
+}
+@keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.8);opacity:0.4} }
+
+/* ===================== TIMER ===================== */
+.timer-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 20px;
+}
+.timer-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem; font-weight: 700; color: #64748b;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.timer-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1rem; font-weight: 700; color: #f1f5f9;
+  background: #1e293b; padding: 6px 14px; border-radius: 10px;
+  min-width: 48px; text-align: center;
+}
+.timer-value.urgent { color: #f59e0b; animation: timerPulse 0.5s ease-in-out infinite alternate; }
+@keyframes timerPulse { from{opacity:1} to{opacity:0.6} }
+
+/* ===================== PARLIAMENT WRITING ===================== */
+.scenario-headline {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem; font-weight: 800; margin-bottom: 6px;
+  color: #f1f5f9; line-height: 1.3;
+}
+.scenario-desc {
+  font-size: 0.85rem; color: #64748b; line-height: 1.5;
+  margin-bottom: 20px;
+}
+.proposal-input-area { position: relative; }
+.proposal-textarea {
+  width: 100%; min-height: 160px; padding: 18px; font-size: 1.05rem;
+  font-family: 'Outfit', sans-serif;
+  border: 2px solid #1e293b; border-radius: 14px;
+  background: #080c14; color: #f1f5f9; outline: none;
+  resize: none; line-height: 1.6;
+  transition: border-color 0.2s;
+}
+.proposal-textarea:focus { border-color: #a855f7; }
+.proposal-textarea:disabled { opacity: 0.5; background: #111827; }
+.proposal-textarea::placeholder { color: #64748b; }
+.char-counter {
+  font-family: 'IBM Plex Mono', monospace;
+  text-align: right; font-size: 0.8rem; color: #64748b;
+  margin-top: 8px; font-variant-numeric: tabular-nums;
+}
+.char-counter.near-limit { color: #f59e0b; }
+.char-counter.at-limit { color: #ef4444; font-weight: 700; }
+
+/* ===================== VOTING BUTTONS ===================== */
+.vote-instruction {
+  font-size: 0.9rem; color: #64748b; margin-bottom: 20px;
+  text-align: center; line-height: 1.5;
+}
+.vote-buttons { display: flex; flex-direction: column; gap: 12px; }
+.vote-btn {
+  width: 100%; padding: 22px; font-size: 1.3rem; font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+  border: 2px solid #1e293b; border-radius: 16px;
+  background: #111827; color: #f1f5f9; cursor: pointer;
+  transition: all 0.15s; text-align: center;
+  min-height: 72px;
+  -webkit-tap-highlight-color: transparent;
+}
+.vote-btn:active:not(:disabled) { transform: scale(0.97); }
+.vote-btn:disabled { cursor: not-allowed; opacity: 0.45; }
+.vote-btn.selected {
+  opacity: 1 !important;
+  border-color: #10b981 !important;
+  background: rgba(16,185,129,0.12);
+  color: #10b981;
+}
+.vote-btn.selected::after {
+  content: ' \2713'; font-weight: 900;
+}
+.vote-btn:nth-child(1) { border-color: #3b82f6; color: #93c5fd; }
+.vote-btn:nth-child(2) { border-color: #a855f7; color: #c4b5fd; }
+.vote-btn:nth-child(3) { border-color: #eab308; color: #fde68a; }
+.vote-btn:nth-child(4) { border-color: #ef4444; color: #fca5a5; }
+.vote-btn:nth-child(5) { border-color: #22c55e; color: #86efac; }
+.vote-status {
+  text-align: center; margin-top: 14px; font-size: 0.95rem;
+  color: #10b981; font-weight: 700; min-height: 1.4em;
+}
+
+/* Tiebreaker label */
+.tiebreaker-label {
+  font-family: 'IBM Plex Mono', monospace;
+  color: #ef4444; font-weight: 700; font-size: 0.8rem;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+/* ===================== RESULTS ===================== */
+.result-card { text-align: center; padding: 32px 20px; }
+.result-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: #64748b; font-weight: 700; margin-bottom: 10px;
+}
+.result-main {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.2rem; font-weight: 700; line-height: 1.4;
+  margin-bottom: 16px; color: #f1f5f9;
+}
+.result-votes {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 2.5rem; font-weight: 700; color: #a855f7;
+}
+.result-votes-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+  letter-spacing: 0.1em; margin-bottom: 4px;
+}
+.result-divider {
+  width: 48px; height: 2px; background: #1e293b;
+  margin: 20px auto; border-radius: 1px;
+}
+.result-score {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 2rem; font-weight: 700; color: #3b82f6;
+}
+
+/* ===================== LOADING SPINNER ===================== */
+.spinner {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 4px solid #1e293b; border-top-color: #8b5cf6;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===================== GAME OVER ===================== */
+.gameover-header {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.6rem; font-weight: 900; text-align: center;
+  margin-top: 16px; margin-bottom: 12px; letter-spacing: -0.02em;
+}
+.gameover-header.parliament { color: #a855f7; }
+.gameover-header.people { color: #3b82f6; }
+.go-stat { text-align: center; margin-bottom: 10px; }
+.go-stat .go-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 2.2rem; font-weight: 700;
+}
+.go-stat .go-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.go-rank {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1rem; color: #f59e0b; font-weight: 700;
+  text-align: center; margin-bottom: 20px;
+}
+.go-proposals { display: flex; flex-direction: column; gap: 10px; }
+.go-proposal-card {
+  background: #111827; border: 1px solid #1e293b;
+  border-radius: 14px; padding: 16px 18px;
+  border-left: 4px solid #1e293b;
+}
+.go-proposal-card.won { border-left-color: #f59e0b; }
+.go-proposal-card .gp-round {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem; color: #64748b; text-transform: uppercase;
+  letter-spacing: 0.08em; margin-bottom: 4px;
+}
+.go-proposal-card .gp-text {
+  font-size: 0.95rem; color: #e2e8f0; margin: 6px 0;
+  line-height: 1.4;
+}
+.go-proposal-card .gp-score {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem; font-weight: 700;
+  display: inline-block; padding: 2px 8px; border-radius: 6px;
+  margin: 4px 0;
+}
+.go-proposal-card .gp-score.high { color: #10b981; background: rgba(16,185,129,0.1); }
+.go-proposal-card .gp-score.mid { color: #f59e0b; background: rgba(245,158,11,0.1); }
+.go-proposal-card .gp-score.low { color: #ef4444; background: rgba(239,68,68,0.1); }
+.go-proposal-card .gp-comment {
+  font-size: 0.8rem; color: #64748b; font-style: italic;
+  line-height: 1.4; margin-top: 4px;
+}
+.go-proposal-card .gp-votes {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem; color: #64748b; margin-top: 6px;
+}
+.go-narrative {
+  font-size: 0.95rem; color: #64748b; text-align: center;
+  font-style: italic; line-height: 1.6; padding: 16px 0;
+  margin-top: 8px;
+}
+
+/* ===================== RECONNECT BANNER ===================== */
+.reconnect-banner {
+  display: none; position: fixed; top: 0; left: 0; right: 0;
+  background: #ef4444; color: #fff; text-align: center;
+  padding: 12px 16px; font-size: 0.85rem; font-weight: 700; z-index: 100;
+  font-family: 'IBM Plex Mono', monospace;
+  padding-top: calc(12px + env(safe-area-inset-top));
+}
+.reconnect-banner.visible { display: block; }
 </style>
 </head>
 <body>
 
-<div class="reconnect-banner" id="reconnectBanner">
-  Connection lost. Reconnecting...
-</div>
+<div class="reconnect-banner" id="reconnectBanner">Connection lost. Reconnecting...</div>
 
 <div class="app">
 
   <!-- Join Screen -->
   <div class="screen active fade-in" id="screenJoin">
-    <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-      <h1 class="game-title">Economy Collapse Speedrun</h1>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <h1 class="game-title">Economy Collapse<br>Speedrun</h1>
       <p class="game-subtitle">Enter your name to join</p>
       <form id="joinForm" class="card">
         <div class="input-group">
-          <input
-            type="text"
-            id="nameInput"
-            class="name-input"
-            placeholder="Your name"
-            maxlength="15"
-            autocomplete="off"
-            autofocus
-            required
-          />
+          <input type="text" id="nameInput" class="name-input" placeholder="Your name" maxlength="15" autocomplete="off" autofocus required />
           <button type="submit" class="btn-join" id="btnJoin">Join Game</button>
         </div>
         <p class="join-error" id="joinError"></p>
@@ -569,365 +317,391 @@
 
   <!-- Waiting Screen -->
   <div class="screen" id="screenWaiting">
-    <div class="waiting-content">
-      <div class="waiting-name" id="waitingName"></div>
-      <div class="waiting-text">You're in! Waiting for host to start...</div>
+    <div class="status-content">
+      <div class="status-title" id="waitingName"></div>
+      <div class="status-text">You're in! Waiting for host to start...</div>
       <div class="pulse-dot"></div>
     </div>
   </div>
 
-  <!-- Voting Screen -->
+  <!-- Role Reveal Screen -->
+  <div class="screen" id="screenRole">
+    <div class="status-content">
+      <div class="status-icon" id="roleIcon"></div>
+      <div class="status-title" id="roleTitle"></div>
+      <div class="status-text" id="roleText"></div>
+    </div>
+  </div>
+
+  <!-- Parliament Writing Screen -->
+  <div class="screen" id="screenWriting">
+    <div class="card">
+      <div class="timer-bar">
+        <span class="timer-label" id="writingRoundLabel">Round 1</span>
+        <span class="timer-value" id="writingTimer">30</span>
+      </div>
+      <h2 class="scenario-headline" id="writingHeadline"></h2>
+      <p class="scenario-desc" id="writingDesc"></p>
+      <div class="proposal-input-area">
+        <textarea class="proposal-textarea" id="proposalInput" placeholder="Type your policy proposal..." maxlength="200"></textarea>
+        <div class="char-counter" id="charCounter">0 / 200</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Parliament Waiting (voting phase) -->
+  <div class="screen" id="screenParliamentWait">
+    <div class="status-content">
+      <div class="status-icon">&#9878;</div>
+      <div class="status-title parliament">The People Are Deciding...</div>
+      <div class="status-text">Watch the main screen to see how they vote on your proposal.</div>
+      <div class="pulse-dot" style="background:#a855f7"></div>
+    </div>
+  </div>
+
+  <!-- People Watch Screen (writing phase) -->
+  <div class="screen" id="screenPeopleWatch">
+    <div class="status-content">
+      <div class="status-icon">&#128064;</div>
+      <div class="status-title people">Watch the Main Screen</div>
+      <div class="status-text">Parliament is writing proposals. Voting starts soon.</div>
+      <div class="pulse-dot"></div>
+    </div>
+  </div>
+
+  <!-- People Voting Screen -->
   <div class="screen" id="screenVoting">
     <div class="card">
-      <div class="round-header">
-        <span class="round-label" id="roundLabel">Round 1</span>
-        <span class="timer" id="timer">20</span>
+      <div class="timer-bar">
+        <span class="timer-label" id="votingRoundLabel">Vote</span>
+        <span class="timer-value" id="votingTimer">20</span>
       </div>
-      <h2 class="scenario-headline" id="scenarioHeadline"></h2>
-      <p class="scenario-desc" id="scenarioDesc"></p>
-      <div class="options-list" id="optionsList"></div>
+      <p class="vote-instruction">Read proposals on the main screen, then vote below</p>
+      <div class="vote-buttons" id="voteButtons"></div>
       <p class="vote-status" id="voteStatus"></p>
+    </div>
+  </div>
+
+  <!-- Tiebreaker Screen -->
+  <div class="screen" id="screenTiebreaker">
+    <div class="card">
+      <div class="timer-bar">
+        <span class="timer-label tiebreaker-label">Tiebreaker!</span>
+        <span class="timer-value" id="tiebreakerTimer">10</span>
+      </div>
+      <p class="vote-instruction">It's a tie! Vote between the tied proposals</p>
+      <div class="vote-buttons" id="tiebreakerButtons"></div>
+      <p class="vote-status" id="tiebreakerStatus"></p>
+    </div>
+  </div>
+
+  <!-- Parliament Round Result -->
+  <div class="screen" id="screenParliamentResult">
+    <div class="status-content">
+      <div class="result-label">This Round</div>
+      <div class="result-votes" id="parlResultVotes">0</div>
+      <div class="result-votes-label">Votes Received</div>
+      <div class="result-divider"></div>
+      <div class="result-label">Running Total</div>
+      <div class="result-score" id="parlResultTotal">0</div>
+    </div>
+  </div>
+
+  <!-- People Round Result -->
+  <div class="screen" id="screenPeopleResult">
+    <div class="status-content">
+      <div class="result-label">Policy Enacted</div>
+      <div class="result-main" id="peopleResultText"></div>
     </div>
   </div>
 
   <!-- Loading Screen -->
   <div class="screen" id="screenLoading">
-    <div class="loading-content">
-      <div class="loading-spinner"></div>
-      <div class="loading-text" id="loadingText">Loading...</div>
-    </div>
-  </div>
-
-  <!-- Round Result Screen -->
-  <div class="screen" id="screenResult">
-    <div class="result-content">
-      <div class="result-label">Policy Enacted</div>
-      <div class="result-policy" id="resultPolicy"></div>
-      <div class="result-destruction" id="resultDestruction"></div>
-      <div class="result-destruction-label">Destruction Score</div>
+    <div class="status-content">
+      <div class="spinner"></div>
+      <div class="status-text" id="loadingText">Loading...</div>
     </div>
   </div>
 
   <!-- Game Over Screen -->
   <div class="screen" id="screenGameOver">
-    <h1 class="gameover-header" id="gameoverHeader"></h1>
-    <div class="gameover-destruction" id="gameoverDestruction"></div>
-    <div class="gameover-destruction-label">Total Destruction</div>
-
-    <div class="awards-row">
-      <div class="award-card">
-        <div class="award-title">MVP Destroyer</div>
-        <div class="award-name" id="mvpName">-</div>
-        <div class="award-score" id="mvpScore"></div>
-      </div>
-      <div class="award-card">
-        <div class="award-title">Boy Scout</div>
-        <div class="award-name" id="scoutName">-</div>
-        <div class="award-score" id="scoutScore"></div>
-      </div>
-    </div>
-
-    <div class="leaderboard" id="leaderboard">
-      <div class="leaderboard-title">Leaderboard</div>
-    </div>
+    <div id="gameoverContent"></div>
   </div>
 
 </div>
 
 <script>
-(function () {
-  // --- State ---
+(function() {
   let playerName = '';
+  let playerRole = '';
   let ws = null;
   let hasVoted = false;
   let timerInterval = null;
-  let reconnectTimeout = null;
-  let intentionalClose = false;
 
-  // --- DOM refs ---
-  const screens = {
-    join: document.getElementById('screenJoin'),
-    waiting: document.getElementById('screenWaiting'),
-    voting: document.getElementById('screenVoting'),
-    loading: document.getElementById('screenLoading'),
-    result: document.getElementById('screenResult'),
-    gameover: document.getElementById('screenGameOver'),
-  };
+  const screens = {};
+  document.querySelectorAll('.screen').forEach(s => { screens[s.id.replace('screen','')] = s; });
 
-  const joinForm = document.getElementById('joinForm');
-  const nameInput = document.getElementById('nameInput');
-  const btnJoin = document.getElementById('btnJoin');
-  const joinError = document.getElementById('joinError');
-  const waitingName = document.getElementById('waitingName');
-  const roundLabel = document.getElementById('roundLabel');
-  const timerEl = document.getElementById('timer');
-  const scenarioHeadline = document.getElementById('scenarioHeadline');
-  const scenarioDesc = document.getElementById('scenarioDesc');
-  const optionsList = document.getElementById('optionsList');
-  const voteStatus = document.getElementById('voteStatus');
-  const loadingText = document.getElementById('loadingText');
-  const resultPolicy = document.getElementById('resultPolicy');
-  const resultDestruction = document.getElementById('resultDestruction');
-  const gameoverHeader = document.getElementById('gameoverHeader');
-  const gameoverDestruction = document.getElementById('gameoverDestruction');
-  const mvpName = document.getElementById('mvpName');
-  const mvpScore = document.getElementById('mvpScore');
-  const scoutName = document.getElementById('scoutName');
-  const scoutScore = document.getElementById('scoutScore');
-  const leaderboard = document.getElementById('leaderboard');
-  const reconnectBanner = document.getElementById('reconnectBanner');
-
-  // --- Screen management ---
   function showScreen(name) {
-    Object.values(screens).forEach(s => {
-      s.classList.remove('active', 'fade-in');
-    });
-    const target = screens[name];
-    if (target) {
-      target.classList.add('active', 'fade-in');
-    }
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active','fade-in'));
+    const prefix = 'screen' + name;
+    const el = document.getElementById(prefix);
+    if (el) { el.classList.add('active','fade-in'); }
   }
 
-  // --- Timer ---
-  function startTimer(seconds) {
-    clearInterval(timerInterval);
-    let remaining = seconds;
-    timerEl.textContent = remaining;
-    timerEl.classList.remove('urgent');
+  function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-    timerInterval = setInterval(function () {
+  function startTimer(elId, seconds) {
+    clearInterval(timerInterval);
+    const el = document.getElementById(elId);
+    let remaining = seconds;
+    if (el) { el.textContent = remaining; el.classList.remove('urgent'); }
+    timerInterval = setInterval(() => {
       remaining--;
-      if (remaining <= 0) {
-        remaining = 0;
-        clearInterval(timerInterval);
-      }
-      timerEl.textContent = remaining;
-      if (remaining <= 5) {
-        timerEl.classList.add('urgent');
+      if (remaining <= 0) { remaining = 0; clearInterval(timerInterval); }
+      if (el) {
+        el.textContent = remaining;
+        if (remaining <= 5) el.classList.add('urgent');
       }
     }, 1000);
   }
 
-  function stopTimer() {
-    clearInterval(timerInterval);
-  }
+  // WebSocket
+  let reconnectDelay = 2000;
+  let reconnectTimer = null;
 
-  // --- WebSocket ---
   function connect() {
-    if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
-      return;
-    }
-
+    if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) return;
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = protocol + '//' + location.host + '/ws/player/' + encodeURIComponent(playerName);
-    ws = new WebSocket(url);
-
-    ws.onopen = function () {
-      reconnectBanner.classList.remove('visible');
-      clearTimeout(reconnectTimeout);
+    ws = new WebSocket(protocol + '//' + location.host + '/ws/player/' + encodeURIComponent(playerName));
+    ws.onopen = () => {
+      document.getElementById('reconnectBanner').classList.remove('visible');
+      reconnectDelay = 2000;
     };
-
-    ws.onmessage = function (event) {
-      let msg;
-      try {
-        msg = JSON.parse(event.data);
-      } catch (e) {
-        return;
-      }
-      handleMessage(msg);
-    };
-
-    ws.onclose = function () {
-      if (!intentionalClose) {
-        reconnectBanner.classList.add('visible');
-        reconnectTimeout = setTimeout(function () {
-          connect();
-        }, 2000);
-      }
-    };
-
-    ws.onerror = function () {
-      // onclose will fire after this
+    ws.onmessage = (e) => { try { handleMessage(JSON.parse(e.data)); } catch(err) {} };
+    ws.onclose = () => {
+      document.getElementById('reconnectBanner').classList.add('visible');
+      reconnectTimer = setTimeout(connect, reconnectDelay);
+      reconnectDelay = Math.min(reconnectDelay * 2, 16000);
     };
   }
 
-  function send(obj) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(obj));
-    }
-  }
+  function send(obj) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj)); }
 
-  // --- Message handler ---
+  // Message handler
   function handleMessage(msg) {
-    switch (msg.type) {
+    switch(msg.type) {
       case 'joined':
-        showScreen('waiting');
-        waitingName.textContent = msg.name;
+        showScreen('Waiting');
+        document.getElementById('waitingName').textContent = msg.name;
         break;
 
       case 'error':
-        // If still on join screen, show error there
-        if (screens.join.classList.contains('active')) {
-          joinError.textContent = msg.message;
-          btnJoin.disabled = false;
-          btnJoin.textContent = 'Join Game';
-        } else {
-          // Show as a loading-style error
-          loadingText.textContent = msg.message;
-          showScreen('loading');
-        }
+        // Stop reconnecting on fatal errors
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        document.getElementById('reconnectBanner').classList.remove('visible');
+        document.getElementById('joinError').textContent = msg.message;
+        document.getElementById('btnJoin').disabled = false;
+        document.getElementById('btnJoin').textContent = 'Join Game';
+        showScreen('Join');
         break;
 
       case 'loading':
-        loadingText.textContent = msg.message;
-        showScreen('loading');
+        document.getElementById('loadingText').textContent = msg.message;
+        showScreen('Loading');
         break;
 
-      case 'round_start':
+      case 'role_assigned':
+        playerRole = msg.role;
+        const icon = document.getElementById('roleIcon');
+        const title = document.getElementById('roleTitle');
+        const text = document.getElementById('roleText');
+        if (msg.role === 'parliament') {
+          icon.textContent = '\uD83C\uDFDB\uFE0F';
+          title.textContent = 'You Are Parliament';
+          title.className = 'status-title parliament';
+          text.textContent = 'You will write policy proposals for the people to vote on. Your proposals appear live on the main screen.';
+        } else {
+          icon.textContent = '\uD83D\uDDF3\uFE0F';
+          title.textContent = 'You Are The People';
+          title.className = 'status-title people';
+          text.textContent = 'You will vote on parliament\'s proposals. Watch the main screen to read them, then use your phone to vote.';
+        }
+        showScreen('Role');
+        break;
+
+      case 'writing_phase':
         hasVoted = false;
-        renderVotingScreen(msg);
-        showScreen('voting');
-        startTimer(20);
+        if (playerRole === 'parliament') {
+          document.getElementById('writingRoundLabel').textContent = 'Round ' + (msg.round || 1);
+          document.getElementById('writingHeadline').textContent = msg.scenario ? msg.scenario.headline : '';
+          document.getElementById('writingDesc').textContent = msg.scenario ? msg.scenario.description : '';
+          const input = document.getElementById('proposalInput');
+          input.value = '';
+          input.disabled = false;
+          document.getElementById('charCounter').textContent = '0 / 200';
+          document.getElementById('charCounter').className = 'char-counter';
+          showScreen('Writing');
+          startTimer('writingTimer', msg.timer || 30);
+          input.focus();
+        } else {
+          showScreen('PeopleWatch');
+        }
+        break;
+
+      case 'input_locked':
+        const inp = document.getElementById('proposalInput');
+        if (inp) inp.disabled = true;
+        clearInterval(timerInterval);
+        break;
+
+      case 'voting_phase':
+        if (playerRole === 'people') {
+          hasVoted = false;
+          const btnsDiv = document.getElementById('voteButtons');
+          btnsDiv.innerHTML = '';
+          document.getElementById('voteStatus').textContent = '';
+          for (let i = 0; i < (msg.proposal_count || 0); i++) {
+            const btn = document.createElement('button');
+            btn.className = 'vote-btn';
+            btn.textContent = 'Proposal ' + (i + 1);
+            btn.addEventListener('click', () => {
+              if (hasVoted) return;
+              hasVoted = true;
+              btnsDiv.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
+              btn.classList.add('selected');
+              document.getElementById('voteStatus').textContent = 'Sending vote...';
+              send({type: 'vote', proposal_index: i});
+            });
+            btnsDiv.appendChild(btn);
+          }
+          document.getElementById('votingRoundLabel').textContent = 'Vote';
+          showScreen('Voting');
+          startTimer('votingTimer', msg.timer || 20);
+        } else {
+          // Parliament waits during voting
+          showScreen('ParliamentWait');
+        }
+        break;
+
+      case 'voting_started':
+        if (playerRole === 'parliament') {
+          showScreen('ParliamentWait');
+        }
         break;
 
       case 'vote_confirmed':
-        voteStatus.textContent = 'Vote submitted!';
-        // Highlight confirmed option
-        var btns = optionsList.querySelectorAll('.option-btn');
-        btns.forEach(function (b) {
-          b.disabled = true;
-          if (b.dataset.label === msg.label) {
-            b.classList.add('selected');
-          }
-        });
+        document.getElementById('voteStatus').textContent = 'Vote submitted! \u2713';
         break;
 
-      case 'round_end':
-        stopTimer();
-        resultPolicy.textContent = msg.winning_label + ': ' + msg.winning_policy;
-        resultDestruction.textContent = msg.destruction_score;
-        showScreen('result');
+      case 'tiebreaker':
+        if (playerRole === 'people') {
+          hasVoted = false;
+          const tbDiv = document.getElementById('tiebreakerButtons');
+          tbDiv.innerHTML = '';
+          document.getElementById('tiebreakerStatus').textContent = '';
+          (msg.tied_indices || []).forEach(idx => {
+            const btn = document.createElement('button');
+            btn.className = 'vote-btn';
+            btn.textContent = 'Proposal ' + (idx + 1);
+            btn.addEventListener('click', () => {
+              if (hasVoted) return;
+              hasVoted = true;
+              tbDiv.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
+              btn.classList.add('selected');
+              document.getElementById('tiebreakerStatus').textContent = 'Vote sent!';
+              send({type: 'tiebreaker_vote', proposal_index: idx});
+            });
+            tbDiv.appendChild(btn);
+          });
+          showScreen('Tiebreaker');
+          startTimer('tiebreakerTimer', msg.timer || 10);
+        }
+        break;
+
+      case 'round_result':
+        clearInterval(timerInterval);
+        if (playerRole === 'parliament') {
+          document.getElementById('parlResultVotes').textContent = msg.votes_received || 0;
+          document.getElementById('parlResultTotal').textContent = msg.running_total || 0;
+          showScreen('ParliamentResult');
+        } else {
+          document.getElementById('peopleResultText').textContent = msg.winning_text || 'Policy enacted';
+          showScreen('PeopleResult');
+        }
         break;
 
       case 'game_over':
-        stopTimer();
+        clearInterval(timerInterval);
         renderGameOver(msg);
-        showScreen('gameover');
+        showScreen('GameOver');
         break;
     }
   }
 
-  // --- Render voting ---
-  function renderVotingScreen(msg) {
-    roundLabel.textContent = 'Round ' + msg.round;
-    scenarioHeadline.textContent = msg.scenario.headline;
-    scenarioDesc.textContent = msg.scenario.description;
-    voteStatus.textContent = '';
-
-    optionsList.innerHTML = '';
-    msg.scenario.options.forEach(function (opt) {
-      var btn = document.createElement('button');
-      btn.className = 'option-btn';
-      btn.dataset.label = opt.label;
-
-      btn.innerHTML =
-        '<span class="option-circle">' + opt.label + '</span>' +
-        '<span class="option-text">' + escapeHtml(opt.text) + '</span>' +
-        '<span class="option-check">&#10003;</span>';
-
-      btn.addEventListener('click', function () {
-        if (hasVoted) return;
-        hasVoted = true;
-
-        // Visual feedback immediately
-        var allBtns = optionsList.querySelectorAll('.option-btn');
-        allBtns.forEach(function (b) { b.disabled = true; });
-        btn.classList.add('selected');
-        voteStatus.textContent = 'Sending vote...';
-
-        send({ type: 'vote', label: opt.label });
-      });
-
-      optionsList.appendChild(btn);
-    });
-  }
-
-  // --- Render game over ---
   function renderGameOver(msg) {
-    if (msg.collapsed) {
-      gameoverHeader.textContent = 'ECONOMY COLLAPSED';
-      gameoverHeader.className = 'gameover-header collapsed';
+    const container = document.getElementById('gameoverContent');
+    let html = '';
+
+    if (msg.role === 'parliament') {
+      html += `<h1 class="gameover-header parliament">Game Over — Parliament</h1>`;
+      html += `<div class="go-stat"><div class="go-value" style="color:#a855f7">${msg.total_votes || 0}</div><div class="go-label">Total Votes Received</div></div>`;
+      html += `<div class="go-rank">#${msg.rank || '?'} of ${msg.total_parliament || '?'} Parliament Members</div>`;
+
+      if (msg.proposals && msg.proposals.length) {
+        html += '<div class="go-proposals">';
+        msg.proposals.forEach(p => {
+          const score = p.ai_quality_score || 0;
+          const scoreCls = score >= 70 ? 'high' : score >= 40 ? 'mid' : 'low';
+          html += `<div class="go-proposal-card ${p.won ? 'won' : ''}">
+            <div class="gp-round">Round ${p.round}${p.won ? ' \u2605 Winner' : ''}</div>
+            <div class="gp-text">${escapeHtml(p.text || '(empty)')}</div>
+            <div class="gp-score ${scoreCls}">AI Score: ${score}/100</div>
+            <div class="gp-comment">"${escapeHtml(p.ai_commentary || '')}"</div>
+            <div class="gp-votes">${p.votes_received} vote${p.votes_received !== 1 ? 's' : ''}</div>
+          </div>`;
+        });
+        html += '</div>';
+      }
     } else {
-      gameoverHeader.textContent = 'ECONOMY SURVIVED';
-      gameoverHeader.className = 'gameover-header survived';
+      html += `<h1 class="gameover-header people">Game Over — The People</h1>`;
+      html += `<div class="go-stat"><div class="go-value" style="color:#3b82f6">${msg.score || 0}</div><div class="go-label">Judgment Score</div></div>`;
+      html += `<div class="go-rank">#${msg.rank || '?'} of ${msg.total_people || '?'} People</div>`;
     }
 
-    gameoverDestruction.textContent = msg.destruction_score;
-
-    // Awards
-    if (msg.mvp_destroyer) {
-      mvpName.textContent = msg.mvp_destroyer.name;
-      mvpScore.textContent = msg.mvp_destroyer.score + ' pts';
-    }
-    if (msg.boy_scout) {
-      scoutName.textContent = msg.boy_scout.name;
-      scoutScore.textContent = msg.boy_scout.score + ' pts';
+    if (msg.narrative) {
+      html += `<div class="go-narrative">${escapeHtml(msg.narrative)}</div>`;
     }
 
-    // Leaderboard
-    // Remove old rows
-    var oldRows = leaderboard.querySelectorAll('.leaderboard-row');
-    oldRows.forEach(function (r) { r.remove(); });
-
-    if (msg.leaderboard && msg.leaderboard.length > 0) {
-      msg.leaderboard.forEach(function (entry, idx) {
-        var row = document.createElement('div');
-        row.className = 'leaderboard-row';
-        if (entry.name === playerName) {
-          row.classList.add('me');
-        }
-
-        row.innerHTML =
-          '<span class="leaderboard-rank">#' + (idx + 1) + '</span>' +
-          '<span class="leaderboard-name">' + escapeHtml(entry.name) + '</span>' +
-          '<span class="leaderboard-score">' + entry.score + '</span>';
-
-        leaderboard.appendChild(row);
-      });
-    }
+    container.innerHTML = html;
   }
 
-  // --- Util ---
-  function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  // --- Join form ---
-  joinForm.addEventListener('submit', function (e) {
+  // Join form
+  document.getElementById('joinForm').addEventListener('submit', (e) => {
     e.preventDefault();
-
-    var name = nameInput.value.trim();
-    if (!name) {
-      joinError.textContent = 'Please enter a name.';
-      return;
-    }
-
-    joinError.textContent = '';
+    const name = document.getElementById('nameInput').value.trim();
+    if (!name) { document.getElementById('joinError').textContent = 'Please enter a name.'; return; }
+    document.getElementById('joinError').textContent = '';
     playerName = name;
-    btnJoin.disabled = true;
-    btnJoin.textContent = 'Connecting...';
-
+    document.getElementById('btnJoin').disabled = true;
+    document.getElementById('btnJoin').textContent = 'Connecting...';
     connect();
   });
 
-  // Clear error on typing
-  nameInput.addEventListener('input', function () {
-    joinError.textContent = '';
+  // Parliament typing
+  const proposalInput = document.getElementById('proposalInput');
+  proposalInput.addEventListener('input', () => {
+    const text = proposalInput.value;
+    const len = text.length;
+    const counter = document.getElementById('charCounter');
+    counter.textContent = len + ' / 200';
+    counter.className = 'char-counter' + (len >= 200 ? ' at-limit' : len >= 170 ? ' near-limit' : '');
+    send({type: 'keystroke', text: text});
+  });
+
+  document.getElementById('nameInput').addEventListener('input', () => {
+    document.getElementById('joinError').textContent = '';
   });
 })();
 </script>
-
 </body>
 </html>

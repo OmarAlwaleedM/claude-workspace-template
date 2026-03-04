@@ -4,36 +4,34 @@
 
 ## Project Overview
 
-**Economy Collapse Speedrun** — a multiplayer classroom game built in Python for a university programming course.
+**Economy Collapse Speedrun v2 — Parliament Edition** — a multiplayer classroom political simulation built in Python for a university programming course.
 
 ### The Game in One Sentence
 
-A live economy simulation projected on a big screen where an LLM generates compounding scenarios in real time, the whole class votes on absurd policies via their phones, and everyone watches the economy crumble together.
+A live economy simulation projected on a big screen where a randomly elected "parliament" of students writes policy proposals on their phones (character by character, visible to the whole class), the rest of the class votes on which proposal to enact, and an AI secretly grades every proposal — revealed only at game over.
 
 ### What Makes It Different From Kahoot
 
 This is NOT a quiz. The key differentiators:
 
-1. **Living simulation** — the projector shows a real-time economy dashboard (GDP, inflation, unemployment, etc.) that visibly deteriorates each round. Decisions compound: print money in round 2, face hyperinflation by round 5.
-2. **The projector IS the show** — the phone is just a remote control. The entertainment is watching the economy crumble on the big screen with nosediving graphs, panicked news tickers, and indicators turning red.
-3. **Social dynamics** — majority rules means the class sees the vote distribution. 80% picking the unhinged option while 3 people try to save the economy is inherently funny. Collective guilt.
-4. **LLM-generated compounding narrative** — an LLM generates every scenario in real time. It receives the full history of enacted policies + current economy state + real-world events. Legalize drugs in round 1? Round 3's headline references the booming cocaine industry. Nothing is disconnected.
-5. **Adapts to the class** — if the class picks responsible options, scenarios stay tame. If they go unhinged, the LLM escalates to match. It mirrors the room's energy.
-6. **Current events woven in** — scenarios reference real-world headlines (Trump/Greenland, Iran situation, Maduro, trade wars) twisted through the fictional economy's lens.
+1. **Players create the content** — parliament members write their own policy proposals live on their phones. The class watches them type character by character on the projector. No pre-written options.
+2. **Living simulation** — the projector shows a real-time economy dashboard (GDP, inflation, employment, etc.) that visibly changes each round. Decisions compound: print money in round 2, face hyperinflation by round 5.
+3. **The projector IS the show** — phones are just remotes. The entertainment is watching parliament scramble to write proposals, the economy crumble, and the AI roast everyone at the end.
+4. **Two scoring systems** — parliament scores by total votes received (popularity). People score by cumulative AI quality of proposals they voted for (judgment). Nobody sees AI scores until the end.
+5. **Social dynamics** — watching who writes what, who copies who, and vote distributions creates inherent drama. The AI calls out copiers publicly at game over.
+6. **LLM-generated compounding narrative** — an LLM generates every scenario in real time based on full history. It also evaluates proposals and generates a satirical end-game narrative.
+7. **Two modes** — Constructive (build the best economy, names revealed) and Destructive (collapse it fastest, names anonymous).
 
 ### Core Mechanics
 
-1. **Host screen** (projector): Live economy dashboard, LLM-generated scenario, vote results, satirical news ticker, QR code to join
-2. **Player phones** (via QR code → ngrok public URL): Simple voting interface — pick 1 of 4 policy options each round
-3. **LLM-generated scenarios** (via OpenRouter → Gemini/Grok): Each round, the LLM gets the full context (economy state + all previous decisions + current events) and generates a new compounding scenario with 4 options + satirical news ticker headlines
-4. **Four option types per round**:
-   - A: The responsible one (positive points — bad for the game objective)
-   - B: The corrupt/greedy one (moderately destructive)
-   - C: The unhinged one (highly destructive, the funny one)
-   - D: The wildcard (unpredictable)
-5. **Cumulative scoring**: Individual scores accumulate across all rounds, revealed at the end with MVP Destroyer and Boy Scout awards
-6. **Configurable duration**: Host sets how long the game runs
-7. **Early vote skip**: If all players vote before the timer, move on immediately
+1. **Settings screen**: Host configures mode, duration, parliament size, timers, anonymous/revealed
+2. **Lobby**: QR code on projector → students join on phones → host clicks Start
+3. **Role assignment**: System randomly picks 3-5 parliament members, rest are "The People"
+4. **Each round (3 phases)**:
+   - **Writing**: Scenario appears on projector. Parliament types proposals (200 char max, live on projector). People watch. Copy disclaimer visible. Auto-locks at timer end.
+   - **Voting**: Proposals finalized on projector. People vote via numbered buttons on phone (read text from projector). AI grades proposals in parallel. Live vote bars on projector.
+   - **Results**: Winner displayed, economy updates, AI generates next scenario in parallel. If tied: tiebreaker vote.
+5. **Game Over**: Final economy state → AI Reveal (hidden scores + commentary for every proposal every round) → Parliament leaderboard → People leaderboard → Awards → Satirical narrative
 
 ### Tone & Vibe
 
@@ -41,17 +39,17 @@ This is NOT a quiz. The key differentiators:
 - Absurdist humor > shock value — "Abolish weekdays" is funnier than just being offensive
 - Economic concept wordplay — "quantitative squeezing," "trickle-sideways economics"
 - Dark but classroom-safe — The Purge references, dystopian scenarios, absurd bureaucracy
-- Current events twisted satirically — real headlines remixed into the game world
-- Adaptive — mirrors the class's energy level
+- Current events twisted satirically — real Feb-Mar 2026 headlines remixed into the game world
+- Adaptive — the AI mirrors the class's energy based on past decisions
 - Hard red lines: no rape, no trashing religions, no slurs, no real atrocities
 
 ### Tech Stack
 
 - Python (primary language — this is a Python course)
-- FastAPI + WebSockets for real-time multiplayer
-- OpenRouter API → Gemini or Grok (fast, cheap) for LLM scenario generation
-- httpx for async API calls
-- Vanilla HTML/JS for two frontend pages (host + player)
+- FastAPI + WebSockets for real-time multiplayer with role-based messaging
+- OpenRouter API → Grok (`x-ai/grok-4.1-fast`) for scenario generation, proposal evaluation, and narrative
+- httpx for async API calls (parallel AI calls during human activity phases)
+- Vanilla HTML/JS for two frontend pages (host.html + player.html)
 - ngrok for tunneling (university WiFi is strict)
 - qrcode library for QR generation
 

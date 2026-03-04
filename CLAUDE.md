@@ -27,18 +27,38 @@ Claude should always orient itself through `/prime` at session start, then act w
 
 ```
 .
-├── CLAUDE.md              # This file — core context, always loaded
+├── CLAUDE.md                          # This file — core context, always loaded
 ├── .claude/
-│   └── commands/          # Slash commands Claude can execute
-│       ├── prime.md       # /prime — session initialization
-│       ├── create-plan.md  # /create-plan — create implementation plans
-│       └── implement.md   # /implement — execute plans
-├── context/               # Background context about the user and project
-│                          # (User should populate with role, goals, strategies)
-├── plans/                 # Implementation plans created by /create-plan
-├── outputs/               # Work products and deliverables
-├── reference/             # Templates, examples, reusable patterns
-└── scripts/               # Automation scripts (if applicable)
+│   └── commands/                      # Slash commands Claude can execute
+│       ├── prime.md                   # /prime — session initialization
+│       ├── create-plan.md             # /create-plan — create implementation plans
+│       └── implement.md               # /implement — execute plans
+├── context/                           # Background context about the user and project
+│   ├── personal-info.md               # Omar — 20yo econ student, Python course
+│   ├── business-info.md               # Project overview: v2 Parliament Edition
+│   ├── strategy.md                    # Strategic priorities and success criteria
+│   ├── current-data.md                # Project status tracker
+│   └── deep-research-report.md        # Real-world news (Feb-Mar 2026) used in LLM prompts
+├── plans/                             # Implementation plans
+│   ├── 2026-03-03-economy-collapse-speedrun.md  # v1 plan (historical)
+│   └── 2026-03-04-economy-collapse-v2-parliament.md  # v2 plan (current)
+├── economy-collapse-speedrun/         # The game project
+│   ├── server.py                      # FastAPI + WebSockets, phase management
+│   ├── game.py                        # Game state, roles, proposals, voting, scoring
+│   ├── economy.py                     # Economy model (6 indicators, 0-100)
+│   ├── llm.py                         # OpenRouter: scenario gen + evaluation + narrative
+│   ├── config.py                      # Settings + GameSettings dataclass
+│   ├── static/host.html               # Projector display
+│   ├── static/player.html             # Phone UI (role-based)
+│   ├── .env                           # API key, model, ngrok URL
+│   ├── requirements.txt               # Python dependencies
+│   ├── README.md                      # Project readme
+│   ├── how_to_start.md                # Step-by-step startup guide
+│   └── ngrok                          # ngrok binary
+├── outputs/                           # Work products and deliverables
+├── reference/                         # Templates, examples, reusable patterns
+├── scripts/                           # Automation scripts (if applicable)
+└── shell-aliases.md                   # Claude Code shell alias setup (cs/cr)
 ```
 
 **Key directories:**
@@ -96,19 +116,6 @@ After any change — adding commands, scripts, workflows, or modifying structure
 
 If yes to any, update the relevant sections. This file must always reflect the current state of the workspace so future sessions have accurate context.
 
-**Examples of changes requiring CLAUDE.md updates:**
-
-- Adding a new slash command → add to Commands section
-- Creating a new output type → document in Workspace Structure or create a section
-- Adding a script → document its purpose and usage
-- Changing workflow patterns → update relevant documentation
-
----
-
-## For Users Downloading This Template
-
-To customize this workspace to your own needs, fill in your context documents in `context/` and modify as needed. Then use `/create-plan` to plan out and `/implement` to execute any structural changes. This ensures everything stays in sync — especially CLAUDE.md, which must always reflect the current state of the workspace.
-
 ---
 
 ## Session Workflow
@@ -123,13 +130,16 @@ To customize this workspace to your own needs, fill in your context documents in
 
 ## Active Projects
 
-### Economy Collapse Speedrun (`economy-collapse-speedrun/`)
+### Economy Collapse Speedrun v2 — Parliament Edition (`economy-collapse-speedrun/`)
 
-Live multiplayer economy simulation for a Python class presentation. Students join via QR code on phones, vote on absurd policies, and watch a fictional economy crumble on the projector. LLM (Grok via OpenRouter) generates scenarios that compound on previous decisions.
+Live multiplayer political simulation for a Python class presentation. A randomly elected parliament writes policy proposals on their phones (visible live on the projector, character by character), the rest of the class votes, and an AI secretly grades every proposal — revealed at game over with witty commentary. Two modes: Constructive (build economy, names revealed) and Destructive (collapse it, anonymous).
 
-**To run:** `cd economy-collapse-speedrun && python3 server.py` (also start ngrok: `./ngrok http 8000`)
+**Tech:** FastAPI + WebSockets + OpenRouter (Grok) + vanilla HTML/JS + ngrok
 
-**Plan:** `plans/2026-03-03-economy-collapse-speedrun.md`
+**To run:** Start ngrok (`cd economy-collapse-speedrun && ./ngrok http 8000`), update `.env` with the ngrok URL, then `python3 server.py`. See `economy-collapse-speedrun/how_to_start.md` for full instructions.
+
+**v2 Plan:** `plans/2026-03-04-economy-collapse-v2-parliament.md`
+**v1 Plan (historical):** `plans/2026-03-03-economy-collapse-speedrun.md`
 
 ---
 
@@ -139,3 +149,4 @@ Live multiplayer economy simulation for a Python class presentation. Students jo
 - Plans live in `plans/` with dated filenames for history
 - Outputs are organized by type/purpose in `outputs/`
 - Reference materials go in `reference/` for reuse
+- `__pycache__/` and `.DS_Store` can be safely deleted (build artifacts)

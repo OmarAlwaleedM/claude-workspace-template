@@ -2,1439 +2,1037 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1920, height=1080, initial-scale=1">
-<title>Economy Collapse Speedrun — Host</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Economy Collapse Speedrun v2 — Parliament Edition</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
-/* ===== RESET & BASE ===== */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
-  width: 1920px;
-  height: 1080px;
-  overflow: hidden;
-  background: #0f172a;
-  color: #f1f5f9;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  width: 100%; height: 100vh; overflow: hidden;
+  background: #080c14; color: #e2e8f0;
+  font-family: 'Outfit', sans-serif;
 }
 
 /* ===== TOP BAR ===== */
 #top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 72px;
-  padding: 0 32px;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  border-bottom: 2px solid #334155;
-  position: relative;
-  z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; padding: 0 24px;
+  background: linear-gradient(180deg, #0f1520 0%, #080c14 100%);
+  border-bottom: 1px solid #1e293b;
+  position: relative; z-index: 10;
+}
+.tb-title {
+  font-size: 13px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;
+  background: linear-gradient(90deg, #ef4444 0%, #f59e0b 35%, #10b981 70%, #8b5cf6 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.tb-center {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 16px;
+}
+.tb-round {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #94a3b8;
+}
+.tb-phase {
+  font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: #64748b; background: #111827; padding: 4px 12px; border-radius: 6px;
+}
+.tb-right { display: flex; align-items: center; gap: 20px; }
+.tb-timer {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 36px; font-weight: 800; color: #f1f5f9;
+  letter-spacing: 2px; font-variant-numeric: tabular-nums;
+}
+.tb-timer.warning { color: #f59e0b; }
+.tb-timer.critical { color: #ef4444; animation: pulse-text 0.5s ease-in-out infinite alternate; }
+@keyframes pulse-text { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.tb-destruction {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.tb-destruction .label {
+  font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #475569;
+}
+.tb-destruction .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 800; color: #ef4444;
 }
 
-#top-bar .title {
-  font-size: 24px;
-  font-weight: 900;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  background: linear-gradient(90deg, #ef4444, #eab308, #22c55e);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-#top-bar .round-counter {
-  font-size: 28px;
-  font-weight: 700;
-  color: #e2e8f0;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-}
-
-#top-bar .right-section {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-}
-
-#top-bar .timer {
-  font-size: 36px;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  color: #f1f5f9;
-  min-width: 100px;
-  text-align: right;
-}
-
-#top-bar .timer.warning { color: #eab308; }
-#top-bar .timer.critical { color: #ef4444; animation: pulse-text 0.5s ease-in-out infinite alternate; }
-
-#top-bar .destruction-score {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-#top-bar .destruction-score .label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: #94a3b8;
-}
-
-#top-bar .destruction-score .value {
-  font-size: 28px;
-  font-weight: 900;
-  color: #ef4444;
-}
-
-/* ===== MAIN AREA ===== */
+/* ===== MAIN LAYOUT ===== */
 #main-area {
-  display: flex;
-  height: calc(1080px - 72px - 52px); /* minus top bar and bottom strip */
-  overflow: hidden;
+  display: flex; height: calc(100vh - 56px - 40px); overflow: hidden;
 }
 
-/* --- Economy Dashboard (left 60%) --- */
-#economy-panel {
-  width: 60%;
-  padding: 32px 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 24px;
+/* --- Economy Sidebar --- */
+#economy-sidebar {
+  width: 180px; padding: 16px 14px;
+  background: #0a0f18; border-right: 1px solid #1e293b;
+  display: flex; flex-direction: column; justify-content: center; gap: 12px;
+  flex-shrink: 0;
+}
+.eco-row { display: flex; flex-direction: column; gap: 3px; }
+.eco-header { display: flex; justify-content: space-between; align-items: baseline; }
+.eco-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: #64748b;
+}
+.eco-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums;
+  transition: color 0.8s ease;
+}
+.eco-track {
+  width: 100%; height: 8px; background: #111827; border-radius: 4px; overflow: hidden;
+}
+.eco-fill {
+  height: 100%; border-radius: 4px;
+  transition: width 0.8s ease, background-color 0.8s ease;
 }
 
-.indicator {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+/* --- Content Area --- */
+#content-area {
+  flex: 1; padding: 20px 24px; display: flex; flex-direction: column; overflow: hidden;
 }
 
-.indicator .indicator-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+/* Scenario */
+#scenario-bar {
+  margin-bottom: 16px; min-height: 48px;
 }
-
-.indicator .indicator-label {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: #cbd5e1;
-}
-
-.indicator .indicator-value {
-  font-size: 22px;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  transition: color 1s ease;
-}
-
-.indicator .bar-track {
-  width: 100%;
-  height: 36px;
-  background: #1e293b;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #334155;
-  position: relative;
-}
-
-.indicator .bar-fill {
-  height: 100%;
-  border-radius: 7px;
-  transition: width 1s ease, background-color 1s ease;
-  position: relative;
-}
-
-.indicator .bar-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%);
-  border-radius: 7px 7px 0 0;
-}
-
-/* --- Scenario Panel (right 40%) --- */
-#scenario-panel {
-  width: 40%;
-  padding: 28px 32px;
-  border-left: 2px solid #334155;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
 #scenario-headline {
-  font-size: 26px;
-  font-weight: 900;
-  color: #f8fafc;
-  margin-bottom: 12px;
-  line-height: 1.2;
+  font-size: 24px; font-weight: 900; color: #f8fafc; line-height: 1.15;
+  letter-spacing: -0.5px;
 }
-
 #scenario-description {
-  font-size: 15px;
-  font-weight: 400;
-  color: #94a3b8;
-  margin-bottom: 20px;
-  line-height: 1.5;
-  max-height: 90px;
+  font-size: 13px; color: #64748b; margin-top: 4px; line-height: 1.4;
+}
+
+/* Proposals Grid */
+#proposals-grid {
+  flex: 1; display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; overflow: hidden;
+}
+.prop-card {
+  background: #111827; border-radius: 12px; padding: 14px 16px;
+  border: 2px solid #1e293b; display: flex; flex-direction: column;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
   overflow: hidden;
 }
+.prop-card.winner {
+  border-color: #f59e0b; box-shadow: 0 0 30px rgba(245,158,11,0.15);
+}
+.prop-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px; flex-shrink: 0;
+}
+.prop-name {
+  font-size: 11px; font-weight: 800; letter-spacing: 2px;
+  text-transform: uppercase; color: #475569;
+}
+.prop-votes {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 700; color: #f59e0b; display: none;
+}
+.prop-text {
+  font-size: 18px; font-weight: 600; color: #e2e8f0; line-height: 1.35;
+  flex: 1; word-break: break-word; overflow: hidden;
+}
+.prop-text .cursor {
+  display: inline-block; width: 2px; height: 20px;
+  background: #8b5cf6; animation: blink 0.7s step-end infinite;
+  vertical-align: text-bottom; margin-left: 2px;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-#options-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
-  overflow: hidden;
+/* Vote bars inside proposal cards */
+.prop-votebar { display: none; margin-top: auto; padding-top: 8px; flex-shrink: 0; }
+.prop-votebar-track {
+  width: 100%; height: 6px; background: #0a0f18; border-radius: 3px; overflow: hidden;
+}
+.prop-votebar-fill {
+  height: 100%; border-radius: 3px; transition: width 0.4s ease; background: #3b82f6;
+}
+.prop-votebar-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 700; color: #475569; margin-top: 3px; text-align: right;
 }
 
-.option-card {
-  background: #1e293b;
-  border-radius: 10px;
-  padding: 14px 18px;
-  border: 2px solid #334155;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  transition: border-color 0.3s ease;
-  position: relative;
-  overflow: hidden;
+/* Copy disclaimer */
+#copy-disclaimer {
+  display: none; text-align: center; margin-top: 8px;
+  font-size: 11px; font-weight: 700; color: #f59e0b; letter-spacing: 0.5px;
+  padding: 6px; background: rgba(245,158,11,0.06); border-radius: 6px;
 }
 
-.option-card.winner {
-  border-color: #eab308;
-  box-shadow: 0 0 20px rgba(234,179,8,0.2);
-}
-
-.option-card .option-top {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.option-card .option-badge {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: 900;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.option-card[data-label="A"] .option-badge { background: #22c55e; }
-.option-card[data-label="B"] .option-badge { background: #eab308; }
-.option-card[data-label="C"] .option-badge { background: #ef4444; }
-.option-card[data-label="D"] .option-badge { background: #a855f7; }
-
-.option-card .option-text {
-  font-size: 14px;
-  font-weight: 500;
-  color: #e2e8f0;
-  line-height: 1.3;
-  flex: 1;
-}
-
-.option-card .vote-bar-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 20px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.option-card .vote-bar-container.visible {
-  opacity: 1;
-}
-
-.option-card .vote-bar-track {
-  flex: 1;
-  height: 14px;
-  background: #0f172a;
-  border-radius: 7px;
-  overflow: hidden;
-}
-
-.option-card .vote-bar-fill {
-  height: 100%;
-  border-radius: 7px;
-  transition: width 0.4s ease;
-  width: 0%;
-}
-
-.option-card[data-label="A"] .vote-bar-fill { background: #22c55e; }
-.option-card[data-label="B"] .vote-bar-fill { background: #eab308; }
-.option-card[data-label="C"] .vote-bar-fill { background: #ef4444; }
-.option-card[data-label="D"] .vote-bar-fill { background: #a855f7; }
-
-.option-card .vote-count {
-  font-size: 14px;
-  font-weight: 700;
-  color: #94a3b8;
-  min-width: 28px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-/* ===== BOTTOM NEWS TICKER ===== */
+/* ===== BOTTOM TICKER ===== */
 #bottom-strip {
-  height: 52px;
-  background: #020617;
-  border-top: 2px solid #334155;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  position: relative;
+  height: 40px; background: #060910; border-top: 1px solid #1e293b;
+  display: flex; align-items: center; overflow: hidden;
 }
-
-#bottom-strip .ticker-label {
-  background: #ef4444;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 900;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  padding: 0 20px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  z-index: 2;
+.ticker-label {
+  background: #dc2626; color: #fff;
+  font-size: 10px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
+  padding: 0 14px; height: 100%; display: flex; align-items: center; flex-shrink: 0;
 }
-
-#bottom-strip .ticker-track {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-
+.ticker-track { flex: 1; overflow: hidden; height: 100%; display: flex; align-items: center; }
 #ticker-content {
-  display: inline-block;
-  white-space: nowrap;
-  animation: marquee 30s linear infinite;
-  font-size: 18px;
-  font-weight: 600;
-  color: #eab308;
-  padding-left: 100%;
+  display: inline-block; white-space: nowrap;
+  animation: marquee 35s linear infinite;
+  font-size: 13px; font-weight: 600; color: #f59e0b; padding-left: 100%;
+  letter-spacing: 0.3px;
 }
-
-@keyframes marquee {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
-}
+@keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
 
 /* ===== OVERLAYS ===== */
 .overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 1920px;
-  height: 1080px;
-  z-index: 100;
-  display: none;
-  align-items: center;
-  justify-content: center;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 100; display: none; align-items: center; justify-content: center;
 }
+.overlay.active { display: flex; }
 
-.overlay.active {
-  display: flex;
+/* --- Settings --- */
+#settings-overlay {
+  background: #080c14; flex-direction: column; gap: 28px; padding: 48px;
 }
-
-/* --- Lobby Overlay --- */
-#lobby-overlay {
-  background: #0f172a;
-  flex-direction: column;
-  gap: 24px;
+.settings-title {
+  font-size: 48px; font-weight: 900; text-align: center; letter-spacing: -1px;
+  background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981, #8b5cf6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-
-#lobby-overlay .lobby-title {
-  font-size: 56px;
-  font-weight: 900;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  text-align: center;
-  background: linear-gradient(90deg, #ef4444, #eab308, #22c55e, #a855f7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.settings-subtitle {
+  font-size: 16px; color: #475569; text-align: center; margin-top: -16px;
+  letter-spacing: 4px; text-transform: uppercase; font-weight: 700;
 }
-
-#lobby-overlay .lobby-subtitle {
-  font-size: 28px;
-  font-weight: 600;
-  color: #94a3b8;
-  text-align: center;
+.mode-toggle { display: flex; gap: 14px; max-width: 500px; width: 100%; }
+.mode-btn {
+  flex: 1; padding: 20px; font-size: 16px; font-weight: 700;
+  border: 2px solid #1e293b; border-radius: 14px; background: #111827;
+  color: #64748b; cursor: pointer; text-align: center; transition: all 0.2s;
+  font-family: 'Outfit', sans-serif;
 }
-
-#lobby-overlay .qr-container {
-  margin: 16px 0;
-  background: #fff;
-  padding: 16px;
-  border-radius: 16px;
-  box-shadow: 0 0 60px rgba(168, 85, 247, 0.3);
+.mode-btn.active { border-color: #8b5cf6; color: #f1f5f9; background: rgba(139,92,246,0.08); }
+.mode-btn:hover { border-color: #334155; }
+.mode-btn small { display: block; color: #475569; font-weight: 400; font-size: 13px; margin-top: 4px; }
+.settings-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 500px; width: 100%;
 }
-
-#lobby-overlay .qr-container img {
-  width: 280px;
-  height: 280px;
-  display: block;
+.sg-group { display: flex; flex-direction: column; gap: 6px; }
+.sg-group label {
+  font-size: 11px; font-weight: 700; color: #475569;
+  text-transform: uppercase; letter-spacing: 1.5px;
 }
-
-#lobby-overlay .player-count {
-  font-size: 24px;
-  font-weight: 700;
-  color: #e2e8f0;
-  text-align: center;
+.sg-group select {
+  padding: 12px 14px; font-size: 15px; font-weight: 600;
+  background: #111827; border: 2px solid #1e293b; border-radius: 10px;
+  color: #e2e8f0; outline: none; cursor: pointer; font-family: 'Outfit', sans-serif;
 }
-
-#lobby-overlay .player-count span {
-  color: #22c55e;
+.sg-group select:focus { border-color: #8b5cf6; }
+.btn-continue {
+  padding: 16px 56px; font-size: 16px; font-weight: 800;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: #8b5cf6; color: #fff; border: none; border-radius: 12px;
+  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 24px rgba(139,92,246,0.3);
+  font-family: 'Outfit', sans-serif;
 }
+.btn-continue:hover { transform: scale(1.03); }
 
-#lobby-overlay .player-list {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  max-width: 900px;
-  margin: 0 auto;
+/* --- Lobby --- */
+#lobby-overlay { background: #080c14; flex-direction: column; gap: 20px; }
+.lobby-title {
+  font-size: 52px; font-weight: 900; letter-spacing: -1px; text-align: center; line-height: 1.05;
+  background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981, #8b5cf6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-
-#lobby-overlay .player-chip {
-  background: #1e293b;
-  border: 2px solid #334155;
-  border-radius: 24px;
-  padding: 8px 20px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #e2e8f0;
-  animation: pop-in 0.3s ease;
+.lobby-subtitle {
+  font-size: 20px; font-weight: 600; color: #475569; text-align: center;
+  letter-spacing: 3px; text-transform: uppercase;
 }
-
-@keyframes pop-in {
-  0% { transform: scale(0); opacity: 0; }
-  70% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
+.qr-box {
+  background: #fff; padding: 14px; border-radius: 14px;
+  box-shadow: 0 0 80px rgba(139,92,246,0.2);
 }
-
-#lobby-overlay .start-btn {
-  margin-top: 12px;
-  padding: 18px 64px;
-  font-size: 22px;
-  font-weight: 900;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
+.qr-box img { width: 220px; height: 220px; display: block; }
+.lobby-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px; font-weight: 700; color: #94a3b8; text-align: center;
 }
-
-#lobby-overlay .start-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 30px rgba(34, 197, 94, 0.5);
+.lobby-count span { color: #10b981; font-weight: 800; }
+.lobby-chips {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+  max-width: 700px; margin: 0 auto;
 }
-
-#lobby-overlay .start-btn:disabled {
-  background: #334155;
-  color: #64748b;
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
+.lobby-chip {
+  background: #111827; border: 1px solid #1e293b; border-radius: 20px;
+  padding: 6px 18px; font-size: 15px; font-weight: 600; color: #e2e8f0;
+  animation: chipIn 0.3s ease;
 }
-
-#lobby-overlay .start-btn:disabled:hover {
-  transform: none;
-  box-shadow: none;
+@keyframes chipIn { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.08)} 100%{transform:scale(1);opacity:1} }
+.btn-start {
+  padding: 16px 64px; font-size: 18px; font-weight: 900;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: #10b981; color: #fff; border: none; border-radius: 12px;
+  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 24px rgba(16,185,129,0.3);
+  font-family: 'Outfit', sans-serif;
 }
+.btn-start:hover { transform: scale(1.03); }
+.btn-start:disabled { background: #1e293b; color: #475569; cursor: not-allowed; box-shadow: none; transform: none; }
+.lobby-note { font-size: 12px; color: #334155; text-align: center; }
 
-#lobby-overlay .min-players-note {
-  font-size: 14px;
-  color: #64748b;
+/* --- Loading --- */
+#loading-overlay { background: rgba(8,12,20,0.94); flex-direction: column; gap: 20px; }
+.ld-spinner {
+  width: 48px; height: 48px; border: 4px solid #1e293b; border-top-color: #8b5cf6;
+  border-radius: 50%; animation: spin 0.7s linear infinite;
 }
-
-/* --- Loading Overlay --- */
-#loading-overlay {
-  background: rgba(15, 23, 42, 0.92);
-  flex-direction: column;
-  gap: 24px;
-}
-
-#loading-overlay .loading-spinner {
-  width: 64px;
-  height: 64px;
-  border: 6px solid #334155;
-  border-top-color: #a855f7;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-#loading-overlay .loading-message {
-  font-size: 28px;
-  font-weight: 700;
-  color: #e2e8f0;
-  text-align: center;
-  max-width: 700px;
+@keyframes spin { to{transform:rotate(360deg)} }
+.ld-message {
+  font-size: 20px; font-weight: 700; color: #94a3b8; text-align: center;
   animation: pulse-text 1.5s ease-in-out infinite;
 }
 
-@keyframes pulse-text {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+/* --- Role Reveal --- */
+#role-reveal-overlay { background: rgba(8,12,20,0.96); flex-direction: column; gap: 18px; }
+.reveal-title {
+  font-size: 32px; font-weight: 900; color: #f59e0b;
+  text-transform: uppercase; letter-spacing: 2px;
 }
-
-/* --- Round Results Overlay --- */
-#results-overlay {
-  background: rgba(15, 23, 42, 0.95);
-  flex-direction: column;
-  gap: 28px;
+.reveal-list { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.reveal-chip {
+  background: rgba(139,92,246,0.1); border: 2px solid #8b5cf6; border-radius: 12px;
+  padding: 12px 24px; font-size: 18px; font-weight: 700; color: #e2e8f0;
 }
+.reveal-note { font-size: 16px; color: #64748b; }
 
-#results-overlay .results-title {
-  font-size: 36px;
-  font-weight: 900;
-  color: #eab308;
-  text-transform: uppercase;
-  letter-spacing: 3px;
+/* --- Results --- */
+#results-overlay { background: rgba(8,12,20,0.96); flex-direction: column; gap: 20px; padding: 40px; }
+.results-title {
+  font-size: 28px; font-weight: 900; color: #f59e0b;
+  text-transform: uppercase; letter-spacing: 2px;
 }
-
-#results-overlay .vote-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 24px;
-  height: 200px;
+.vote-chart { display: flex; align-items: flex-end; gap: 24px; height: 150px; }
+.vc-col { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 90px; }
+.vc-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px; font-weight: 800; color: #94a3b8;
 }
-
-.vote-chart .vote-bar-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  width: 120px;
+.vc-bar-wrap {
+  width: 60px; height: 130px; background: #111827; border-radius: 8px;
+  display: flex; align-items: flex-end; overflow: hidden; border: 1px solid #1e293b;
 }
-
-.vote-chart .vote-bar-col .bar-wrapper {
-  width: 80px;
-  height: 180px;
-  background: #1e293b;
-  border-radius: 8px;
-  display: flex;
-  align-items: flex-end;
-  overflow: hidden;
-  border: 1px solid #334155;
+.vc-bar-inner {
+  width: 100%; border-radius: 6px; transition: height 0.6s ease; background: #3b82f6;
 }
-
-.vote-chart .vote-bar-col .bar-inner {
-  width: 100%;
-  border-radius: 6px;
-  transition: height 0.6s ease;
+.vc-bar-inner.winner { background: #f59e0b; }
+.vc-label {
+  font-size: 12px; font-weight: 700; color: #94a3b8; text-align: center;
+  max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-
-.vote-chart .vote-bar-col[data-label="A"] .bar-inner { background: #22c55e; }
-.vote-chart .vote-bar-col[data-label="B"] .bar-inner { background: #eab308; }
-.vote-chart .vote-bar-col[data-label="C"] .bar-inner { background: #ef4444; }
-.vote-chart .vote-bar-col[data-label="D"] .bar-inner { background: #a855f7; }
-
-.vote-chart .vote-bar-col .bar-label {
-  font-size: 20px;
-  font-weight: 900;
-  color: #e2e8f0;
+.wp-box {
+  background: #111827; border: 2px solid #f59e0b; border-radius: 12px;
+  padding: 14px 28px; max-width: 600px; text-align: center;
 }
-
-.vote-chart .vote-bar-col .bar-count {
-  font-size: 16px;
-  font-weight: 700;
-  color: #94a3b8;
+.wp-label {
+  font-size: 10px; font-weight: 800; letter-spacing: 2px;
+  text-transform: uppercase; color: #f59e0b; margin-bottom: 4px;
 }
-
-#results-overlay .winning-policy {
-  background: #1e293b;
-  border: 2px solid #eab308;
-  border-radius: 12px;
-  padding: 16px 28px;
-  max-width: 700px;
-  text-align: center;
+.wp-text { font-size: 16px; font-weight: 600; color: #f1f5f9; }
+.eco-changes { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 700px; }
+.ec-item {
+  background: #111827; border-radius: 8px; padding: 6px 12px;
+  display: flex; align-items: center; gap: 6px; border: 1px solid #1e293b;
 }
+.ec-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #475569; }
+.ec-old { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #475569; }
+.ec-arrow { font-size: 12px; color: #334155; }
+.ec-new { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; }
+.ec-new.up { color: #10b981; }
+.ec-new.down { color: #ef4444; }
+.ec-new.same { color: #475569; }
 
-#results-overlay .winning-policy .wp-label {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #eab308;
-  margin-bottom: 6px;
-}
-
-#results-overlay .winning-policy .wp-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: #f1f5f9;
-}
-
-#results-overlay .economy-changes {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-  max-width: 900px;
-}
-
-.economy-changes .change-item {
-  background: #1e293b;
-  border-radius: 8px;
-  padding: 10px 18px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid #334155;
-}
-
-.change-item .change-label {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #94a3b8;
-}
-
-.change-item .change-old {
-  font-size: 16px;
-  font-weight: 700;
-  color: #64748b;
-}
-
-.change-item .change-arrow {
-  font-size: 16px;
-  color: #64748b;
-}
-
-.change-item .change-new {
-  font-size: 16px;
-  font-weight: 900;
-}
-
-.change-item .change-new.up { color: #22c55e; }
-.change-item .change-new.down { color: #ef4444; }
-.change-item .change-new.same { color: #94a3b8; }
-
-/* --- Game Over Overlay --- */
+/* --- Game Over --- */
 #gameover-overlay {
-  background: rgba(15, 23, 42, 0.97);
-  flex-direction: column;
-  gap: 20px;
-  overflow-y: auto;
-  padding: 40px;
+  background: rgba(8,12,20,0.98); flex-direction: column; gap: 16px;
+  overflow-y: auto; padding: 32px 40px; align-items: center;
+}
+.go-title { font-size: 48px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
+.go-title.collapsed { color: #ef4444; animation: shake 0.4s ease-in-out 3; }
+.go-title.survived { color: #10b981; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px) rotate(-1deg)} 75%{transform:translateX(8px) rotate(1deg)} }
+.go-narrative {
+  font-size: 15px; color: #64748b; text-align: center; max-width: 650px;
+  line-height: 1.6; font-style: italic;
+}
+.go-section {
+  font-size: 11px; font-weight: 800; color: #334155;
+  text-transform: uppercase; letter-spacing: 3px; margin-top: 12px;
 }
 
-#gameover-overlay .go-title {
-  font-size: 64px;
-  font-weight: 900;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  text-align: center;
+/* AI Reveal */
+.air-round {
+  background: #111827; border-radius: 12px; padding: 14px 18px;
+  width: 100%; max-width: 850px; margin-bottom: 8px;
 }
-
-#gameover-overlay .go-title.collapsed {
-  color: #ef4444;
-  animation: screen-shake 0.4s ease-in-out 3;
+.air-round-label {
+  font-size: 12px; font-weight: 800; color: #334155;
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px;
 }
-
-#gameover-overlay .go-title.survived {
-  color: #22c55e;
-  text-shadow: 0 0 40px rgba(34, 197, 94, 0.4);
+.air-prop {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 6px 0; border-top: 1px solid #1e293b;
 }
-
-@keyframes screen-shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-12px) rotate(-1deg); }
-  75% { transform: translateX(12px) rotate(1deg); }
+.air-prop:first-of-type { border-top: none; }
+.air-score {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px; font-weight: 800; min-width: 44px; text-align: center;
+  padding: 3px 0; border-radius: 6px;
 }
+.air-score.high { color: #10b981; background: rgba(16,185,129,0.08); }
+.air-score.mid { color: #f59e0b; background: rgba(245,158,11,0.08); }
+.air-score.low { color: #ef4444; background: rgba(239,68,68,0.08); }
+.air-details { flex: 1; min-width: 0; }
+.air-winner { font-size: 10px; font-weight: 800; color: #f59e0b; text-transform: uppercase; letter-spacing: 1px; }
+.air-text { font-size: 13px; color: #cbd5e1; margin-bottom: 2px; }
+.air-comment { font-size: 12px; color: #475569; font-style: italic; }
+.air-votes { font-size: 11px; color: #334155; }
 
-#gameover-overlay .go-score {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+/* Leaderboards */
+.go-lbs { display: flex; gap: 20px; width: 100%; max-width: 850px; }
+.go-lb { flex: 1; background: #111827; border-radius: 12px; overflow: hidden; }
+.go-lb .lb-title {
+  padding: 10px 14px 4px; font-size: 11px; color: #475569;
+  text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800;
 }
-
-#gameover-overlay .go-score .go-score-label {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #94a3b8;
+.go-lb table { width: 100%; border-collapse: collapse; }
+.go-lb th {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  color: #334155; padding: 5px 12px; text-align: left; border-bottom: 1px solid #1e293b;
 }
-
-#gameover-overlay .go-score .go-score-value {
-  font-size: 72px;
-  font-weight: 900;
-  color: #ef4444;
-  line-height: 1;
+.go-lb th:last-child { text-align: right; }
+.go-lb td {
+  padding: 7px 12px; font-size: 14px; font-weight: 600; color: #94a3b8;
+  border-bottom: 1px solid #080c14;
 }
-
-#gameover-overlay .go-rounds {
-  font-size: 20px;
-  font-weight: 600;
-  color: #94a3b8;
+.go-lb td:first-child { color: #334155; font-size: 12px; width: 32px; }
+.go-lb td:last-child {
+  text-align: right; font-weight: 800; font-variant-numeric: tabular-nums;
+  font-family: 'JetBrains Mono', monospace;
 }
+.go-lb tr:first-child td { color: #f59e0b; font-weight: 900; }
 
-#gameover-overlay .awards {
-  display: flex;
-  gap: 40px;
-  margin: 8px 0;
+/* Awards */
+.go-awards { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin: 8px 0; }
+.award-card {
+  background: #111827; border-radius: 12px; padding: 14px 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  border: 1px solid #1e293b; min-width: 170px;
 }
-
-.awards .award-card {
-  background: #1e293b;
-  border-radius: 16px;
-  padding: 24px 36px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  border: 2px solid #334155;
-  min-width: 260px;
-}
-
-.award-card .award-icon {
-  font-size: 48px;
-  line-height: 1;
-}
-
-.award-card .award-title {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #94a3b8;
-}
-
-.award-card .award-name {
-  font-size: 28px;
-  font-weight: 900;
-  color: #f1f5f9;
-}
-
-.award-card .award-score {
-  font-size: 16px;
-  font-weight: 600;
-  color: #64748b;
-}
-
-.award-card.mvp { border-color: #ef4444; }
-.award-card.mvp .award-title { color: #ef4444; }
-
-.award-card.scout { border-color: #22c55e; }
-.award-card.scout .award-title { color: #22c55e; }
-
-#gameover-overlay .leaderboard {
-  width: 100%;
-  max-width: 600px;
-}
-
-.leaderboard table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.leaderboard th {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #64748b;
-  padding: 8px 16px;
-  text-align: left;
-  border-bottom: 2px solid #334155;
-}
-
-.leaderboard th:last-child {
-  text-align: right;
-}
-
-.leaderboard td {
-  padding: 10px 16px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #e2e8f0;
-  border-bottom: 1px solid #1e293b;
-}
-
-.leaderboard td:first-child {
-  color: #94a3b8;
-  font-size: 16px;
-  width: 40px;
-}
-
-.leaderboard td:last-child {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  color: #ef4444;
-  font-weight: 900;
-}
-
-.leaderboard tr:first-child td {
-  color: #eab308;
-  font-weight: 900;
-}
-
-.leaderboard tr:first-child td:last-child {
-  color: #ef4444;
-}
-
-/* ===== ROUND TIMER (top bar local countdown) ===== */
-#round-timer {
-  font-size: 20px;
-  font-weight: 700;
-  color: #94a3b8;
-  min-width: 40px;
-  text-align: center;
-}
-
-#round-timer.urgent {
-  color: #ef4444;
-  animation: pulse-text 0.5s ease-in-out infinite alternate;
-}
+.award-card .aw-icon { font-size: 32px; }
+.award-card .aw-title { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #475569; }
+.award-card .aw-name { font-size: 20px; font-weight: 900; color: #f1f5f9; }
+.award-card .aw-detail { font-size: 12px; color: #334155; }
 </style>
 </head>
-
 <body>
 
-<!-- ===== TOP BAR ===== -->
+<!-- TOP BAR -->
 <div id="top-bar">
-  <div class="title">Economy Collapse Speedrun</div>
-  <div class="round-counter" id="round-counter">ROUND 0</div>
-  <div class="right-section">
-    <div id="round-timer"></div>
-    <div class="timer" id="game-timer">05:00</div>
-    <div class="destruction-score">
+  <div class="tb-title">Economy Collapse Speedrun</div>
+  <div class="tb-center">
+    <div class="tb-round" id="round-counter"></div>
+    <div class="tb-phase" id="phase-label"></div>
+  </div>
+  <div class="tb-right">
+    <div class="tb-timer" id="game-timer"></div>
+    <div class="tb-destruction">
       <div class="label">Destruction</div>
       <div class="value" id="destruction-value">0</div>
     </div>
   </div>
 </div>
 
-<!-- ===== MAIN AREA ===== -->
+<!-- MAIN AREA -->
 <div id="main-area">
-
-  <!-- Economy Dashboard -->
-  <div id="economy-panel">
-    <div class="indicator" data-key="gdp" data-mode="higher-better">
-      <div class="indicator-header">
-        <span class="indicator-label">GDP</span>
-        <span class="indicator-value" id="val-gdp">75</span>
-      </div>
-      <div class="bar-track"><div class="bar-fill" id="bar-gdp" style="width:75%"></div></div>
+  <div id="economy-sidebar">
+    <div class="eco-row" data-key="gdp" data-mode="higher-better">
+      <div class="eco-header"><span class="eco-label">GDP</span><span class="eco-value" id="val-gdp">75</span></div>
+      <div class="eco-track"><div class="eco-fill" id="bar-gdp" style="width:75%"></div></div>
     </div>
-    <div class="indicator" data-key="employment" data-mode="higher-better">
-      <div class="indicator-header">
-        <span class="indicator-label">Employment</span>
-        <span class="indicator-value" id="val-employment">80</span>
-      </div>
-      <div class="bar-track"><div class="bar-fill" id="bar-employment" style="width:80%"></div></div>
+    <div class="eco-row" data-key="employment" data-mode="higher-better">
+      <div class="eco-header"><span class="eco-label">Employment</span><span class="eco-value" id="val-employment">80</span></div>
+      <div class="eco-track"><div class="eco-fill" id="bar-employment" style="width:80%"></div></div>
     </div>
-    <div class="indicator" data-key="inflation" data-mode="higher-worse">
-      <div class="indicator-header">
-        <span class="indicator-label">Inflation</span>
-        <span class="indicator-value" id="val-inflation">20</span>
-      </div>
-      <div class="bar-track"><div class="bar-fill" id="bar-inflation" style="width:20%"></div></div>
+    <div class="eco-row" data-key="inflation" data-mode="higher-worse">
+      <div class="eco-header"><span class="eco-label">Inflation</span><span class="eco-value" id="val-inflation">20</span></div>
+      <div class="eco-track"><div class="eco-fill" id="bar-inflation" style="width:20%"></div></div>
     </div>
-    <div class="indicator" data-key="public_trust" data-mode="higher-better">
-      <div class="indicator-header">
-        <span class="indicator-label">Public Trust</span>
-        <span class="indicator-value" id="val-public_trust">70</span>
-      </div>
-      <div class="bar-track"><div class="bar-fill" id="bar-public_trust" style="width:70%"></div></div>
+    <div class="eco-row" data-key="public_trust" data-mode="higher-better">
+      <div class="eco-header"><span class="eco-label">Trust</span><span class="eco-value" id="val-public_trust">70</span></div>
+      <div class="eco-track"><div class="eco-fill" id="bar-public_trust" style="width:70%"></div></div>
     </div>
-    <div class="indicator" data-key="trade_balance" data-mode="higher-better">
-      <div class="indicator-header">
-        <span class="indicator-label">Trade Balance</span>
-        <span class="indicator-value" id="val-trade_balance">60</span>
-      </div>
-      <div class="bar-track"><div class="bar-fill" id="bar-trade_balance" style="width:60%"></div></div>
+    <div class="eco-row" data-key="trade_balance" data-mode="higher-better">
+      <div class="eco-header"><span class="eco-label">Trade</span><span class="eco-value" id="val-trade_balance">60</span></div>
+      <div class="eco-track"><div class="eco-fill" id="bar-trade_balance" style="width:60%"></div></div>
     </div>
-    <div class="indicator" data-key="national_debt" data-mode="higher-worse">
-      <div class="indicator-header">
-        <span class="indicator-label">National Debt</span>
-        <span class="indicator-value" id="val-national_debt">30</span>
-      </div>
-      <div class="bar-track"><div class="bar-fill" id="bar-national_debt" style="width:30%"></div></div>
+    <div class="eco-row" data-key="national_debt" data-mode="higher-worse">
+      <div class="eco-header"><span class="eco-label">Debt</span><span class="eco-value" id="val-national_debt">30</span></div>
+      <div class="eco-track"><div class="eco-fill" id="bar-national_debt" style="width:30%"></div></div>
     </div>
   </div>
 
-  <!-- Scenario Panel -->
-  <div id="scenario-panel">
-    <div id="scenario-headline">Waiting for game to start...</div>
-    <div id="scenario-description"></div>
-    <div id="options-list"></div>
+  <div id="content-area">
+    <div id="scenario-bar">
+      <div id="scenario-headline">Waiting for game to start...</div>
+      <div id="scenario-description"></div>
+    </div>
+    <div id="proposals-grid"></div>
+    <div id="copy-disclaimer">&#9888; Copying yields lower AI scores</div>
   </div>
 </div>
 
-<!-- ===== BOTTOM NEWS TICKER ===== -->
+<!-- BOTTOM TICKER -->
 <div id="bottom-strip">
   <div class="ticker-label">Breaking</div>
-  <div class="ticker-track">
-    <div id="ticker-content">Welcome to Economy Collapse Speedrun. Scan the QR code to join!</div>
-  </div>
+  <div class="ticker-track"><div id="ticker-content">Welcome to Economy Collapse Speedrun — Parliament Edition. Scan the QR code to join!</div></div>
 </div>
 
-<!-- ===== OVERLAYS ===== -->
+<!-- OVERLAYS -->
+
+<!-- Settings -->
+<div class="overlay active" id="settings-overlay">
+  <div class="settings-title">Parliament Edition</div>
+  <div class="settings-subtitle">Economy Collapse Speedrun</div>
+  <div class="mode-toggle">
+    <button class="mode-btn active" data-mode="destructive" id="mode-destructive">Destructive<small>Collapse the economy</small></button>
+    <button class="mode-btn" data-mode="constructive" id="mode-constructive">Constructive<small>Build the best economy</small></button>
+  </div>
+  <div class="settings-grid">
+    <div class="sg-group">
+      <label>Duration</label>
+      <select id="set-duration">
+        <option value="180">3 minutes</option>
+        <option value="300" selected>5 minutes</option>
+        <option value="420">7 minutes</option>
+        <option value="600">10 minutes</option>
+      </select>
+    </div>
+    <div class="sg-group">
+      <label>Parliament Size</label>
+      <select id="set-parliament">
+        <option value="3">3 members</option>
+        <option value="4" selected>4 members</option>
+        <option value="5">5 members</option>
+      </select>
+    </div>
+    <div class="sg-group">
+      <label>Proposal Time</label>
+      <select id="set-proposal-time">
+        <option value="20">20 seconds</option>
+        <option value="30" selected>30 seconds</option>
+        <option value="40">40 seconds</option>
+      </select>
+    </div>
+    <div class="sg-group">
+      <label>Voting Time</label>
+      <select id="set-voting-time">
+        <option value="15">15 seconds</option>
+        <option value="20" selected>20 seconds</option>
+        <option value="25">25 seconds</option>
+      </select>
+    </div>
+    <div class="sg-group" style="grid-column:span 2">
+      <label>Names</label>
+      <select id="set-anonymous">
+        <option value="true">Anonymous</option>
+        <option value="false">Revealed</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn-continue" id="settings-continue-btn">Continue to Lobby</button>
+</div>
 
 <!-- Lobby -->
-<div class="overlay active" id="lobby-overlay">
+<div class="overlay" id="lobby-overlay">
   <div class="lobby-title">Economy Collapse<br>Speedrun</div>
-  <div class="lobby-subtitle">Scan to join!</div>
-  <div class="qr-container">
-    <img id="qr-img" alt="QR Code" src="" />
-  </div>
-  <div class="player-count">Players: <span id="lobby-count">0</span></div>
-  <div class="player-list" id="lobby-players"></div>
-  <button class="start-btn" id="start-btn" disabled>Waiting for players...</button>
-  <div class="min-players-note" id="min-note"></div>
+  <div class="lobby-subtitle">Scan to Join</div>
+  <div class="qr-box"><img id="qr-img" alt="QR Code" src="" /></div>
+  <div class="lobby-count">Players: <span id="lobby-count">0</span></div>
+  <div class="lobby-chips" id="lobby-players"></div>
+  <button class="btn-start" id="start-btn" disabled>Waiting for players...</button>
+  <div class="lobby-note" id="min-note"></div>
 </div>
 
 <!-- Loading -->
 <div class="overlay" id="loading-overlay">
-  <div class="loading-spinner"></div>
-  <div class="loading-message" id="loading-message">Loading...</div>
+  <div class="ld-spinner"></div>
+  <div class="ld-message" id="loading-message">Loading...</div>
 </div>
 
-<!-- Round Results -->
+<!-- Role Reveal -->
+<div class="overlay" id="role-reveal-overlay">
+  <div class="reveal-title">Parliament Has Been Elected!</div>
+  <div class="reveal-list" id="reveal-parliament"></div>
+  <div class="reveal-note" id="reveal-people-note"></div>
+</div>
+
+<!-- Results -->
 <div class="overlay" id="results-overlay">
   <div class="results-title" id="results-title">Round Results</div>
   <div class="vote-chart" id="results-vote-chart"></div>
-  <div class="winning-policy" id="results-winning">
-    <div class="wp-label">Winning Policy</div>
-    <div class="wp-text" id="results-wp-text"></div>
-  </div>
-  <div class="economy-changes" id="results-changes"></div>
+  <div class="wp-box"><div class="wp-label">Winning Policy</div><div class="wp-text" id="results-wp-text"></div></div>
+  <div class="eco-changes" id="results-changes"></div>
 </div>
 
 <!-- Game Over -->
 <div class="overlay" id="gameover-overlay">
   <div class="go-title" id="go-title"></div>
-  <div class="go-score">
-    <div class="go-score-label">Destruction Score</div>
-    <div class="go-score-value" id="go-score-value">0</div>
-  </div>
-  <div class="go-rounds" id="go-rounds"></div>
-  <div class="awards" id="go-awards"></div>
-  <div class="leaderboard" id="go-leaderboard"></div>
+  <div class="go-narrative" id="go-narrative"></div>
+  <div class="go-section">AI Reveal — Hidden Scores</div>
+  <div id="go-ai-reveal"></div>
+  <div class="go-section">Awards</div>
+  <div class="go-awards" id="go-awards"></div>
+  <div class="go-section">Leaderboards</div>
+  <div class="go-lbs" id="go-leaderboards"></div>
 </div>
 
 <script>
 (function() {
   'use strict';
 
-  // ===== CONFIG =====
-  const ROUND_TIME_SECONDS = 20;
+  let currentPhase = 'settings';
+  let ws = null;
+  let settings = {mode:'destructive', duration_seconds:300, parliament_size:4, anonymous:true, proposal_time:30, voting_time:20};
+  let parliamentNames = [];
 
-  // ===== STATE =====
-  let currentState = 'lobby'; // lobby | playing | results | gameover
-  let roundTimerInterval = null;
-  let roundSecondsLeft = ROUND_TIME_SECONDS;
-  let votingActive = false;
-  let totalPlayers = 0;
+  const $ = id => document.getElementById(id);
 
-  // ===== DOM REFS =====
-  const $roundCounter = document.getElementById('round-counter');
-  const $gameTimer = document.getElementById('game-timer');
-  const $roundTimer = document.getElementById('round-timer');
-  const $destructionValue = document.getElementById('destruction-value');
-
-  const $scenarioHeadline = document.getElementById('scenario-headline');
-  const $scenarioDescription = document.getElementById('scenario-description');
-  const $optionsList = document.getElementById('options-list');
-
-  const $tickerContent = document.getElementById('ticker-content');
-
-  const $lobbyOverlay = document.getElementById('lobby-overlay');
-  const $loadingOverlay = document.getElementById('loading-overlay');
-  const $resultsOverlay = document.getElementById('results-overlay');
-  const $gameoverOverlay = document.getElementById('gameover-overlay');
-
-  const $lobbyCount = document.getElementById('lobby-count');
-  const $lobbyPlayers = document.getElementById('lobby-players');
-  const $startBtn = document.getElementById('start-btn');
-  const $minNote = document.getElementById('min-note');
-  const $loadingMessage = document.getElementById('loading-message');
-  const $qrImg = document.getElementById('qr-img');
-
-  // ===== HELPERS =====
-
+  const overlays = ['settings-overlay','lobby-overlay','loading-overlay','role-reveal-overlay','results-overlay','gameover-overlay'];
   function showOverlay(id) {
-    [$lobbyOverlay, $loadingOverlay, $resultsOverlay, $gameoverOverlay].forEach(el => {
-      el.classList.remove('active');
-    });
-    if (id) {
-      document.getElementById(id).classList.add('active');
-    }
+    overlays.forEach(o => $(o).classList.remove('active'));
+    if (id) $(id).classList.add('active');
   }
 
-  function formatTime(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
   }
 
   function getBarColor(value, mode) {
-    if (mode === 'higher-worse') {
-      // Inflation, National Debt: high = bad
-      if (value >= 60) return '#ef4444';
-      if (value >= 30) return '#eab308';
-      return '#22c55e';
-    } else {
-      // GDP, Employment, Public Trust, Trade Balance: high = good
-      if (value >= 60) return '#22c55e';
-      if (value >= 30) return '#eab308';
-      return '#ef4444';
-    }
+    if (mode === 'higher-worse') return value >= 60 ? '#ef4444' : value >= 30 ? '#f59e0b' : '#10b981';
+    return value >= 60 ? '#10b981' : value >= 30 ? '#f59e0b' : '#ef4444';
   }
 
   function updateIndicator(key, value) {
-    const indicator = document.querySelector(`.indicator[data-key="${key}"]`);
-    if (!indicator) return;
-    const mode = indicator.dataset.mode;
-    const color = getBarColor(value, mode);
-
-    const valEl = document.getElementById('val-' + key);
-    const barEl = document.getElementById('bar-' + key);
-    if (valEl) {
-      valEl.textContent = value;
-      valEl.style.color = color;
-    }
-    if (barEl) {
-      barEl.style.width = value + '%';
-      barEl.style.backgroundColor = color;
-    }
+    const ind = document.querySelector(`.eco-row[data-key="${key}"]`);
+    if (!ind) return;
+    const color = getBarColor(value, ind.dataset.mode);
+    const valEl = $('val-' + key);
+    const barEl = $('bar-' + key);
+    if (valEl) { valEl.textContent = value; valEl.style.color = color; }
+    if (barEl) { barEl.style.width = value + '%'; barEl.style.backgroundColor = color; }
   }
 
-  function updateEconomy(economy) {
-    if (!economy) return;
-    const keys = ['gdp', 'employment', 'inflation', 'public_trust', 'trade_balance', 'national_debt'];
-    keys.forEach(k => {
-      if (economy[k] !== undefined) updateIndicator(k, economy[k]);
+  function updateEconomy(eco) {
+    if (!eco) return;
+    ['gdp','employment','inflation','public_trust','trade_balance','national_debt'].forEach(k => {
+      if (eco[k] !== undefined) updateIndicator(k, eco[k]);
     });
-  }
-
-  function startRoundTimer() {
-    clearInterval(roundTimerInterval);
-    roundSecondsLeft = ROUND_TIME_SECONDS;
-    $roundTimer.textContent = roundSecondsLeft + 's';
-    $roundTimer.classList.remove('urgent');
-
-    roundTimerInterval = setInterval(() => {
-      roundSecondsLeft--;
-      if (roundSecondsLeft < 0) roundSecondsLeft = 0;
-      $roundTimer.textContent = roundSecondsLeft + 's';
-
-      if (roundSecondsLeft <= 5) {
-        $roundTimer.classList.add('urgent');
-      } else {
-        $roundTimer.classList.remove('urgent');
-      }
-
-      if (roundSecondsLeft <= 0) {
-        clearInterval(roundTimerInterval);
-      }
-    }, 1000);
-  }
-
-  function stopRoundTimer() {
-    clearInterval(roundTimerInterval);
-    $roundTimer.textContent = '';
-    $roundTimer.classList.remove('urgent');
-  }
-
-  function renderOptions(options) {
-    $optionsList.innerHTML = '';
-    if (!options || options.length === 0) return;
-
-    options.forEach(opt => {
-      const card = document.createElement('div');
-      card.className = 'option-card';
-      card.dataset.label = opt.label;
-      card.innerHTML = `
-        <div class="option-top">
-          <div class="option-badge">${opt.label}</div>
-          <div class="option-text">${opt.text}</div>
-        </div>
-        <div class="vote-bar-container" id="vbc-${opt.label}">
-          <div class="vote-bar-track">
-            <div class="vote-bar-fill" id="vbf-${opt.label}"></div>
-          </div>
-          <div class="vote-count" id="vc-${opt.label}">0</div>
-        </div>
-      `;
-      $optionsList.appendChild(card);
-    });
-  }
-
-  function updateVoteBars(votes, totalVoted, totalPlayersCount) {
-    if (!votes) return;
-    const maxVotes = Math.max(1, totalPlayersCount || 1);
-
-    ['A', 'B', 'C', 'D'].forEach(label => {
-      const container = document.getElementById('vbc-' + label);
-      const fill = document.getElementById('vbf-' + label);
-      const count = document.getElementById('vc-' + label);
-
-      if (container) container.classList.add('visible');
-      if (fill) {
-        const pct = ((votes[label] || 0) / maxVotes) * 100;
-        fill.style.width = pct + '%';
-      }
-      if (count) count.textContent = votes[label] || 0;
-    });
-
-    votingActive = true;
   }
 
   function setTicker(items) {
-    if (!items || items.length === 0) return;
+    if (!items || !items.length) return;
     const text = items.join('  \u2022  ');
-    // Duplicate for seamless loop
-    $tickerContent.textContent = text + '  \u2022  ' + text;
+    $('ticker-content').textContent = text + '  \u2022  ' + text;
   }
 
-  // ===== ROUND RESULTS RENDERING =====
+  function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-  function showRoundResults(data) {
-    // Title
-    document.getElementById('results-title').textContent = 'Round ' + data.round + ' Results';
+  // ===== SETTINGS =====
+  $('mode-destructive').addEventListener('click', () => {
+    $('mode-destructive').classList.add('active');
+    $('mode-constructive').classList.remove('active');
+    settings.mode = 'destructive';
+    $('set-anonymous').value = 'true';
+  });
+  $('mode-constructive').addEventListener('click', () => {
+    $('mode-constructive').classList.add('active');
+    $('mode-destructive').classList.remove('active');
+    settings.mode = 'constructive';
+    $('set-anonymous').value = 'false';
+  });
 
-    // Vote chart
-    const chartEl = document.getElementById('results-vote-chart');
-    chartEl.innerHTML = '';
-    const maxVote = Math.max(1, ...Object.values(data.vote_counts || {}));
-
-    ['A', 'B', 'C', 'D'].forEach(label => {
-      const count = (data.vote_counts || {})[label] || 0;
-      const pct = (count / maxVote) * 100;
-      const col = document.createElement('div');
-      col.className = 'vote-bar-col';
-      col.dataset.label = label;
-      const isWinner = label === data.winning_label;
-      col.innerHTML = `
-        <div class="bar-count">${count}</div>
-        <div class="bar-wrapper">
-          <div class="bar-inner" style="height: ${pct}%"></div>
-        </div>
-        <div class="bar-label" style="${isWinner ? 'color:#eab308' : ''}">${label}${isWinner ? ' \u2605' : ''}</div>
-      `;
-      chartEl.appendChild(col);
-    });
-
-    // Winning policy
-    document.getElementById('results-wp-text').textContent = data.winning_policy || 'No policy';
-
-    // Economy changes
-    const changesEl = document.getElementById('results-changes');
-    changesEl.innerHTML = '';
-    const keys = ['gdp', 'employment', 'inflation', 'public_trust', 'trade_balance', 'national_debt'];
-    const labels = { gdp: 'GDP', employment: 'Employment', inflation: 'Inflation', public_trust: 'Public Trust', trade_balance: 'Trade Balance', national_debt: 'National Debt' };
-
-    keys.forEach(k => {
-      const oldVal = (data.old_economy || {})[k];
-      const newVal = (data.new_economy || {})[k];
-      if (oldVal === undefined || newVal === undefined) return;
-
-      const diff = newVal - oldVal;
-      let cls = 'same';
-      if (diff > 0) cls = 'up';
-      if (diff < 0) cls = 'down';
-
-      // For inverted indicators, swap coloring
-      if (k === 'inflation' || k === 'national_debt') {
-        if (diff > 0) cls = 'down'; // going up is bad
-        if (diff < 0) cls = 'up';   // going down is good
-      }
-
-      const item = document.createElement('div');
-      item.className = 'change-item';
-      item.innerHTML = `
-        <span class="change-label">${labels[k]}</span>
-        <span class="change-old">${oldVal}</span>
-        <span class="change-arrow">\u2192</span>
-        <span class="change-new ${cls}">${newVal}</span>
-      `;
-      changesEl.appendChild(item);
-    });
-
-    showOverlay('results-overlay');
-  }
-
-  // ===== GAME OVER RENDERING =====
-
-  function showGameOver(data) {
-    const titleEl = document.getElementById('go-title');
-    if (data.collapsed) {
-      titleEl.textContent = 'Economy Collapsed';
-      titleEl.className = 'go-title collapsed';
-    } else {
-      titleEl.textContent = 'Economy Survived';
-      titleEl.className = 'go-title survived';
+  $('settings-continue-btn').addEventListener('click', () => {
+    settings.duration_seconds = parseInt($('set-duration').value);
+    settings.parliament_size = parseInt($('set-parliament').value);
+    settings.proposal_time = parseInt($('set-proposal-time').value);
+    settings.voting_time = parseInt($('set-voting-time').value);
+    settings.anonymous = $('set-anonymous').value === 'true';
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({action: 'update_settings', settings: settings}));
     }
-
-    document.getElementById('go-score-value').textContent = data.destruction_score || 0;
-    document.getElementById('go-rounds').textContent = 'Rounds Played: ' + (data.rounds_played || 0);
-
-    // Awards
-    const awardsEl = document.getElementById('go-awards');
-    awardsEl.innerHTML = '';
-
-    if (data.mvp_destroyer) {
-      const card = document.createElement('div');
-      card.className = 'award-card mvp';
-      card.innerHTML = `
-        <div class="award-icon">\uD83C\uDFC6</div>
-        <div class="award-title">MVP Destroyer</div>
-        <div class="award-name">${data.mvp_destroyer.name}</div>
-        <div class="award-score">Score: ${data.mvp_destroyer.score}</div>
-      `;
-      awardsEl.appendChild(card);
-    }
-
-    if (data.boy_scout) {
-      const card = document.createElement('div');
-      card.className = 'award-card scout';
-      card.innerHTML = `
-        <div class="award-icon">\uD83C\uDFC5</div>
-        <div class="award-title">Boy Scout</div>
-        <div class="award-name">${data.boy_scout.name}</div>
-        <div class="award-score">Score: ${data.boy_scout.score}</div>
-      `;
-      awardsEl.appendChild(card);
-    }
-
-    // Leaderboard
-    const lbEl = document.getElementById('go-leaderboard');
-    lbEl.innerHTML = '';
-
-    if (data.leaderboard && data.leaderboard.length > 0) {
-      let html = '<table><thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead><tbody>';
-      data.leaderboard.forEach((entry, i) => {
-        html += `<tr><td>${i + 1}</td><td>${entry.name}</td><td>${entry.score}</td></tr>`;
-      });
-      html += '</tbody></table>';
-      lbEl.innerHTML = html;
-    }
-
-    stopRoundTimer();
-    showOverlay('gameover-overlay');
-    currentState = 'gameover';
-  }
+    showOverlay('lobby-overlay');
+    currentPhase = 'lobby';
+  });
 
   // ===== LOBBY =====
-
   function updateLobby(data) {
-    $lobbyCount.textContent = data.player_count || 0;
-    totalPlayers = data.player_count || 0;
-
-    $lobbyPlayers.innerHTML = '';
+    $('lobby-count').textContent = data.player_count || 0;
+    const list = $('lobby-players');
+    list.innerHTML = '';
     (data.players || []).forEach(name => {
       const chip = document.createElement('div');
-      chip.className = 'player-chip';
+      chip.className = 'lobby-chip';
       chip.textContent = name;
-      $lobbyPlayers.appendChild(chip);
+      list.appendChild(chip);
     });
-
-    const minPlayers = data.min_players || 2;
-    if (data.player_count >= minPlayers) {
-      $startBtn.disabled = false;
-      $startBtn.textContent = 'Start Game';
+    const min = data.min_players || 2;
+    const btn = $('start-btn');
+    if (data.player_count >= min) {
+      btn.disabled = false;
+      btn.textContent = 'Start Game';
     } else {
-      $startBtn.disabled = true;
-      $startBtn.textContent = `Waiting for players... (${data.player_count}/${minPlayers})`;
+      btn.disabled = true;
+      btn.textContent = `Waiting for players... (${data.player_count}/${min})`;
     }
-    $minNote.textContent = `Minimum ${minPlayers} players required`;
+    $('min-note').textContent = `Minimum ${min} players required`;
   }
 
-  // ===== START BUTTON =====
-  $startBtn.addEventListener('click', async () => {
-    if ($startBtn.disabled) return;
-    $startBtn.disabled = true;
-    $startBtn.textContent = 'Starting...';
-
+  $('start-btn').addEventListener('click', async () => {
+    const btn = $('start-btn');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = 'Starting...';
     try {
-      const res = await fetch('/start', { method: 'POST' });
+      const res = await fetch('/start', {method:'POST'});
       const json = await res.json();
       if (json.error) {
-        $startBtn.disabled = false;
-        $startBtn.textContent = json.error;
-        setTimeout(() => { $startBtn.textContent = 'Start Game'; $startBtn.disabled = false; }, 2000);
+        btn.disabled = false;
+        btn.textContent = json.error;
+        setTimeout(() => { btn.textContent = 'Start Game'; btn.disabled = false; }, 2000);
       }
-    } catch (e) {
-      $startBtn.disabled = false;
-      $startBtn.textContent = 'Error — Try Again';
-      setTimeout(() => { $startBtn.textContent = 'Start Game'; $startBtn.disabled = false; }, 2000);
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Error — Try Again';
+      setTimeout(() => { btn.textContent = 'Start Game'; btn.disabled = false; }, 2000);
     }
   });
 
-  // ===== WEBSOCKET =====
+  // ===== PROPOSALS =====
+  function renderProposals(count, names) {
+    parliamentNames = names || [];
+    const grid = $('proposals-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const card = document.createElement('div');
+      card.className = 'prop-card';
+      card.id = 'proposal-' + i;
+      card.innerHTML = `
+        <div class="prop-header">
+          <span class="prop-name">${escapeHtml(names[i] || 'Proposal ' + (i+1))}</span>
+          <span class="prop-votes" id="pvotes-${i}"></span>
+        </div>
+        <div class="prop-text" id="ptext-${i}"><span class="cursor"></span></div>
+        <div class="prop-votebar" id="pvbar-${i}">
+          <div class="prop-votebar-track"><div class="prop-votebar-fill" id="pvfill-${i}"></div></div>
+          <div class="prop-votebar-count" id="pvcount-${i}">0</div>
+        </div>
+      `;
+      grid.appendChild(card);
+    }
+  }
 
+  function updateProposalText(idx, text) {
+    const el = $('ptext-' + idx);
+    if (el) el.innerHTML = escapeHtml(text) + '<span class="cursor"></span>';
+  }
+
+  function showVoteBars(voteCounts, totalPeople) {
+    const max = Math.max(1, totalPeople || 1);
+    for (const [idx, count] of Object.entries(voteCounts)) {
+      const bar = $('pvbar-' + idx);
+      const fill = $('pvfill-' + idx);
+      const countEl = $('pvcount-' + idx);
+      const votesEl = $('pvotes-' + idx);
+      if (bar) bar.style.display = 'block';
+      if (fill) fill.style.width = (count / max * 100) + '%';
+      if (countEl) countEl.textContent = count;
+      if (votesEl) { votesEl.textContent = count + ' votes'; votesEl.style.display = 'inline'; }
+    }
+  }
+
+  function finalizeProposals(proposals) {
+    proposals.forEach(p => {
+      const el = $('ptext-' + p.index);
+      if (el) el.innerHTML = escapeHtml(p.text || '(no proposal)');
+    });
+  }
+
+  // ===== RESULTS =====
+  function showRoundResults(data) {
+    $('results-title').textContent = 'Round ' + data.round + ' Results';
+
+    const chart = $('results-vote-chart');
+    chart.innerHTML = '';
+    const counts = data.vote_counts || {};
+    const maxVote = Math.max(1, ...Object.values(counts));
+    const winIdx = data.winning_index;
+
+    Object.entries(counts).forEach(([idx, count]) => {
+      const pct = (count / maxVote) * 100;
+      const isWin = parseInt(idx) === winIdx;
+      const name = parliamentNames[parseInt(idx)] || 'P' + (parseInt(idx)+1);
+      const col = document.createElement('div');
+      col.className = 'vc-col';
+      col.innerHTML = `
+        <div class="vc-count">${count}</div>
+        <div class="vc-bar-wrap"><div class="vc-bar-inner ${isWin?'winner':''}" style="height:${pct}%"></div></div>
+        <div class="vc-label">${escapeHtml(name)}${isWin?' \u2605':''}</div>
+      `;
+      chart.appendChild(col);
+    });
+
+    $('results-wp-text').textContent = data.winning_text || 'No policy';
+
+    const changes = $('results-changes');
+    changes.innerHTML = '';
+    const keys = ['gdp','employment','inflation','public_trust','trade_balance','national_debt'];
+    const labels = {gdp:'GDP',employment:'EMP',inflation:'INF',public_trust:'TRUST',trade_balance:'TRADE',national_debt:'DEBT'};
+    keys.forEach(k => {
+      const oldV = (data.old_economy||{})[k];
+      const newV = (data.new_economy||{})[k];
+      if (oldV === undefined || newV === undefined) return;
+      const diff = newV - oldV;
+      let cls = 'same';
+      if (k === 'inflation' || k === 'national_debt') {
+        cls = diff > 0 ? 'down' : diff < 0 ? 'up' : 'same';
+      } else {
+        cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'same';
+      }
+      const item = document.createElement('div');
+      item.className = 'ec-item';
+      item.innerHTML = `<span class="ec-label">${labels[k]}</span><span class="ec-old">${oldV}</span><span class="ec-arrow">\u2192</span><span class="ec-new ${cls}">${newV}</span>`;
+      changes.appendChild(item);
+    });
+
+    updateEconomy(data.new_economy);
+    if (data.destruction_score !== undefined) $('destruction-value').textContent = data.destruction_score;
+    showOverlay('results-overlay');
+  }
+
+  // ===== GAME OVER =====
+  function showGameOver(data) {
+    const titleEl = $('go-title');
+    if (data.collapsed) {
+      titleEl.textContent = data.mode === 'destructive' ? 'Economy Collapsed!' : 'Economy Collapsed...';
+      titleEl.className = 'go-title collapsed';
+    } else {
+      titleEl.textContent = data.mode === 'constructive' ? 'Economy Thrived!' : 'Economy Survived';
+      titleEl.className = 'go-title survived';
+    }
+
+    $('go-narrative').textContent = data.narrative || '';
+
+    const revealEl = $('go-ai-reveal');
+    revealEl.innerHTML = '';
+    (data.ai_reveal || []).forEach(round => {
+      const card = document.createElement('div');
+      card.className = 'air-round';
+      let html = `<div class="air-round-label">Round ${round.round} — ${escapeHtml(round.scenario_headline || '')}</div>`;
+      (round.proposals || []).forEach(p => {
+        const score = p.ai_quality_score || 0;
+        const scoreCls = score >= 70 ? 'high' : score >= 40 ? 'mid' : 'low';
+        html += `<div class="air-prop">
+          <div class="air-score ${scoreCls}">${score}</div>
+          <div class="air-details">
+            ${p.won ? '<div class="air-winner">\u2605 Winner</div>' : ''}
+            <div class="air-text">${escapeHtml(p.text || '(empty)')}</div>
+            <div class="air-comment">"${escapeHtml(p.ai_commentary || '')}"</div>
+            <div class="air-votes">${p.votes_received} vote${p.votes_received !== 1 ? 's' : ''} — ${escapeHtml(p.display_name || '')}</div>
+          </div>
+        </div>`;
+      });
+      card.innerHTML = html;
+      revealEl.appendChild(card);
+    });
+
+    const awardsEl = $('go-awards');
+    awardsEl.innerHTML = '';
+    const awards = data.awards || {};
+    const awardDefs = {
+      supreme_dictator: {icon: '\uD83D\uDC51', title: 'Supreme Dictator'},
+      president: {icon: '\uD83C\uDFC6', title: 'President'},
+      minister_of_chaos: {icon: '\uD83D\uDD25', title: 'Minister of Chaos'},
+      chief_advisor: {icon: '\uD83C\uDFC5', title: 'Chief Advisor'},
+      whistleblower: {icon: '\uD83D\uDCE2', title: 'The Whistleblower'},
+    };
+    Object.entries(awards).forEach(([key, val]) => {
+      const def = awardDefs[key] || {icon: '\uD83C\uDFC6', title: key};
+      const card = document.createElement('div');
+      card.className = 'award-card';
+      card.innerHTML = `<div class="aw-icon">${def.icon}</div><div class="aw-title">${def.title}</div><div class="aw-name">${escapeHtml(val.name || '')}</div><div class="aw-detail">${val.votes !== undefined ? val.votes + ' votes' : val.score !== undefined ? val.score + ' pts' : ''}</div>`;
+      awardsEl.appendChild(card);
+    });
+
+    const lbEl = $('go-leaderboards');
+    lbEl.innerHTML = '';
+
+    if (data.parliament_leaderboard && data.parliament_leaderboard.length) {
+      const div = document.createElement('div');
+      div.className = 'go-lb';
+      let html = '<div class="lb-title">Parliament</div><table><thead><tr><th>#</th><th>Name</th><th>Votes</th></tr></thead><tbody>';
+      data.parliament_leaderboard.forEach((e, i) => {
+        html += `<tr><td>${i+1}</td><td>${escapeHtml(e.name)}</td><td>${e.votes_received}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      div.innerHTML = html;
+      lbEl.appendChild(div);
+    }
+
+    if (data.people_leaderboard && data.people_leaderboard.length) {
+      const div = document.createElement('div');
+      div.className = 'go-lb';
+      let html = '<div class="lb-title">The People</div><table><thead><tr><th>#</th><th>Name</th><th>Score</th></tr></thead><tbody>';
+      data.people_leaderboard.forEach((e, i) => {
+        html += `<tr><td>${i+1}</td><td>${escapeHtml(e.name)}</td><td>${e.score}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      div.innerHTML = html;
+      lbEl.appendChild(div);
+    }
+
+    showOverlay('gameover-overlay');
+    currentPhase = 'gameover';
+  }
+
+  // ===== WEBSOCKET =====
   function connect() {
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${location.host}/ws/host`);
-
+    ws = new WebSocket(`${protocol}//${location.host}/ws/host`);
     ws.onopen = () => {
-      console.log('[WS] Connected to host');
-      // Load QR code
-      $qrImg.src = '/qr';
+      console.log('[WS] Host connected');
+      $('qr-img').src = '/qr';
     };
-
     ws.onmessage = (event) => {
       let msg;
-      try {
-        msg = JSON.parse(event.data);
-      } catch (e) {
-        console.error('[WS] Bad JSON:', event.data);
-        return;
-      }
-
+      try { msg = JSON.parse(event.data); } catch(e) { return; }
       handleMessage(msg);
     };
-
     ws.onclose = () => {
-      console.log('[WS] Disconnected — reconnecting in 2s...');
+      console.log('[WS] Disconnected — reconnecting...');
       setTimeout(connect, 2000);
-    };
-
-    ws.onerror = (err) => {
-      console.error('[WS] Error:', err);
     };
   }
 
   function handleMessage(msg) {
-    switch (msg.type) {
-
+    switch(msg.type) {
       case 'lobby_update':
         updateLobby(msg);
-        if (currentState === 'lobby') {
-          showOverlay('lobby-overlay');
-        }
         break;
 
       case 'qr_url':
-        // QR is loaded from /qr endpoint directly
+        break;
+
+      case 'settings_update':
+        settings = msg.settings || settings;
         break;
 
       case 'loading':
-        $loadingMessage.textContent = msg.message || 'Loading...';
+        $('loading-message').textContent = msg.message || 'Loading...';
         showOverlay('loading-overlay');
         break;
 
-      case 'round_start':
-        currentState = 'playing';
-        votingActive = false;
-        showOverlay(null); // hide all overlays
+      case 'role_reveal':
+        const revealList = $('reveal-parliament');
+        revealList.innerHTML = '';
+        (msg.parliament || []).forEach(p => {
+          const chip = document.createElement('div');
+          chip.className = 'reveal-chip';
+          chip.textContent = p.display_name || p.name;
+          revealList.appendChild(chip);
+        });
+        $('reveal-people-note').textContent = `Everyone else (${msg.people_count} players) is The People`;
+        showOverlay('role-reveal-overlay');
+        break;
 
-        // Update round counter
-        $roundCounter.textContent = 'ROUND ' + (msg.round || 0);
-
-        // Update economy
+      case 'writing_phase':
+        currentPhase = 'writing';
+        showOverlay(null);
+        $('round-counter').textContent = 'ROUND ' + (msg.round || 0);
+        $('phase-label').textContent = 'WRITING';
         updateEconomy(msg.economy);
-
-        // Update destruction score
-        if (msg.destruction_score !== undefined) {
-          $destructionValue.textContent = msg.destruction_score;
-        }
-
-        // Update game timer
-        if (msg.time_remaining !== undefined) {
-          $gameTimer.textContent = formatTime(msg.time_remaining);
-          updateTimerStyle(msg.time_remaining);
-        }
-
-        // Render scenario
+        if (msg.destruction_score !== undefined) $('destruction-value').textContent = msg.destruction_score;
+        if (msg.time_remaining !== undefined) { $('game-timer').textContent = formatTime(msg.time_remaining); updateTimerStyle(msg.time_remaining); }
         if (msg.scenario) {
-          $scenarioHeadline.textContent = msg.scenario.headline || '';
-          $scenarioDescription.textContent = msg.scenario.description || '';
-          renderOptions(msg.scenario.options || []);
-
-          // Set news ticker
-          if (msg.scenario.news_ticker && msg.scenario.news_ticker.length > 0) {
-            setTicker(msg.scenario.news_ticker);
-          }
+          $('scenario-headline').textContent = msg.scenario.headline || '';
+          $('scenario-description').textContent = msg.scenario.description || '';
+          if (msg.scenario.news_ticker) setTicker(msg.scenario.news_ticker);
         }
+        renderProposals(msg.parliament_names ? msg.parliament_names.length : settings.parliament_size, msg.parliament_names || []);
+        $('copy-disclaimer').style.display = 'block';
+        break;
 
-        // Start local round countdown
-        startRoundTimer();
+      case 'proposal_keystroke':
+        updateProposalText(msg.parliament_index, msg.text || '');
+        break;
+
+      case 'voting_phase':
+        currentPhase = 'voting';
+        $('phase-label').textContent = 'VOTING';
+        $('copy-disclaimer').style.display = 'none';
+        if (msg.proposals_final) finalizeProposals(msg.proposals_final);
+        const initCounts = {};
+        for (let i = 0; i < (msg.proposal_count || 0); i++) initCounts[i] = 0;
+        showVoteBars(initCounts, 1);
         break;
 
       case 'vote_update':
-        totalPlayers = msg.total_players || totalPlayers;
-        updateVoteBars(msg.votes, msg.total_voted, msg.total_players);
+        showVoteBars(msg.vote_counts || {}, msg.total_people || 1);
+        break;
+
+      case 'tiebreaker':
+        currentPhase = 'tiebreaker';
+        $('phase-label').textContent = 'TIEBREAKER';
+        (msg.tied_indices || []).forEach(idx => {
+          const card = $('proposal-' + idx);
+          if (card) card.style.borderColor = '#ef4444';
+        });
+        break;
+
+      case 'tiebreaker_update':
+        if (msg.vote_counts) showVoteBars(msg.vote_counts, 1);
         break;
 
       case 'round_end':
-        currentState = 'results';
-        stopRoundTimer();
-
-        // Update economy immediately
-        updateEconomy(msg.new_economy);
-        if (msg.destruction_score !== undefined) {
-          $destructionValue.textContent = msg.destruction_score;
-        }
-
+        currentPhase = 'results';
+        $('phase-label').textContent = 'RESULTS';
         showRoundResults(msg);
-        // Results overlay stays visible; the server sends round_start after ~3s delay
         break;
 
       case 'timer':
-        if (msg.time_remaining !== undefined) {
-          $gameTimer.textContent = formatTime(msg.time_remaining);
-          updateTimerStyle(msg.time_remaining);
+        if (msg.game_remaining !== undefined) {
+          $('game-timer').textContent = formatTime(msg.game_remaining);
+          updateTimerStyle(msg.game_remaining);
         }
         break;
 
       case 'game_over':
         showGameOver(msg);
         break;
-
-      default:
-        console.log('[WS] Unknown message type:', msg.type);
     }
   }
 
   function updateTimerStyle(remaining) {
-    $gameTimer.classList.remove('warning', 'critical');
-    if (remaining <= 30) {
-      $gameTimer.classList.add('critical');
-    } else if (remaining <= 60) {
-      $gameTimer.classList.add('warning');
-    }
+    const el = $('game-timer');
+    el.classList.remove('warning','critical');
+    if (remaining <= 30) el.classList.add('critical');
+    else if (remaining <= 60) el.classList.add('warning');
   }
 
-  // ===== INIT =====
   connect();
-
 })();
 </script>
-
 </body>
 </html>
