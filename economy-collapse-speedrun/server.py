@@ -25,6 +25,19 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Economy Collapse Speedrun v2 — Parliament Edition")
 
+
+def get_player_url() -> str:
+    base = config.NGROK_URL.rstrip("/")
+    sep = "&" if "?" in base else "?"
+    return f"{base}/play{sep}ngrok-skip-browser-warning=true"
+
+
+@app.middleware("http")
+async def add_ngrok_header(request, call_next):
+    response = await call_next(request)
+    response.headers["ngrok-skip-browser-warning"] = "true"
+    return response
+
 game = Game()
 
 # Connected WebSocket sets
@@ -113,7 +126,7 @@ async def player_page():
 
 @app.get("/qr")
 async def qr_code():
-    url = f"{config.NGROK_URL}/play"
+    url = get_player_url()
     img = qrcode.make(url)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -613,7 +626,7 @@ async def ws_host(ws: WebSocket):
     # Send current state
     if not game.started:
         await ws.send_text(json.dumps(game.get_lobby_state()))
-        await ws.send_text(json.dumps({"type": "qr_url", "url": f"{config.NGROK_URL}/play"}))
+        await ws.send_text(json.dumps({"type": "qr_url", "url": get_player_url()}))
         await ws.send_text(json.dumps({"type": "settings_update", "settings": game.settings.to_dict()}))
 
     try:

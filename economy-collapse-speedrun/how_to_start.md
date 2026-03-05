@@ -3,18 +3,14 @@
 ## Quick Start (one command)
 
 ```bash
-cd ~/Desktop/claude-code/claude-workspace-template/economy-collapse-speedrun
-./start.sh
+cd ~/Desktop/claude-code/claude-workspace-template/economy-collapse-speedrun && ./start.sh
 ```
 
-This starts ngrok + the game server automatically. The permanent URL is:
-**https://bonelike-utterless-elwanda.ngrok-free.dev**
+This starts ngrok + the game server automatically. The ngrok URL is auto-detected and printed to the terminal.
+
+Then open **http://localhost:8000** in Chrome on the projector.
 
 Press `Ctrl+C` to stop everything.
-
-## Step 2: Open the host display
-
-Open `http://localhost:8000` in your browser (this goes on the projector).
 
 ## Step 3: Configure settings
 
@@ -52,7 +48,12 @@ If `start.sh` doesn't work, run in two terminals:
 
 **Terminal 1:**
 ```bash
-./ngrok http 8000 --url https://default.internal
+./ngrok http 8000
+```
+
+Then copy the URL from ngrok's output and update `.env`:
+```
+NGROK_URL=https://<your-random-url>.ngrok-free.app
 ```
 
 **Terminal 2:**
