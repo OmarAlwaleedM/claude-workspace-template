@@ -32,8 +32,8 @@ class GameSettings:
     duration_seconds: int = 300  # 3/5/7/10 min → 180/300/420/600
     parliament_size: int = 4  # 3/4/5
     anonymous: bool = True  # default depends on mode; set by frontend
-    proposal_time: int = 30  # 20/30/40 seconds
-    voting_time: int = 20  # 15/20/25 seconds
+    proposal_time: int = 120  # 60/90/120 seconds
+    voting_time: int = 45  # 30/45/60 seconds
     tiebreaker_time: int = 10  # fixed
 
     def to_dict(self) -> dict:
@@ -54,7 +54,7 @@ class GameSettings:
             duration_seconds=int(d.get("duration_seconds", 300)),
             parliament_size=int(d.get("parliament_size", 4)),
             anonymous=d.get("anonymous", True),
-            proposal_time=int(d.get("proposal_time", 30)),
-            voting_time=int(d.get("voting_time", 20)),
+            proposal_time=int(d.get("proposal_time", 120)),
+            voting_time=int(d.get("voting_time", 45)),
             tiebreaker_time=int(d.get("tiebreaker_time", 10)),
         )

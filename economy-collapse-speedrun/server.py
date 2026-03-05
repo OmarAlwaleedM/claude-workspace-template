@@ -18,6 +18,7 @@ from llm import (
     generate_narrative,
     generate_scenario,
     get_fallback_evaluations,
+    get_next_fallback_scenario,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -190,7 +191,7 @@ async def start_game_endpoint():
         )
     except Exception as e:
         logger.error(f"Failed to generate first scenario: {e}")
-        scenario = copy.deepcopy(FALLBACK_SCENARIO)
+        scenario = get_next_fallback_scenario(game.settings.mode)
 
     # Start round 1
     await start_round(scenario)
@@ -249,6 +250,7 @@ async def start_round(scenario: dict):
         },
         "timer": game.settings.proposal_time,
         "char_limit": 200,
+        "mode": game.settings.mode,
     })
 
     # Send to people: watch main screen
@@ -521,7 +523,7 @@ async def finalize_round(winning_index: int):
         if not game.scenario_task.done():
             await broadcast_to_host({"type": "loading", "message": random.choice(LOADING_MESSAGES)})
             try:
-                await asyncio.wait_for(game.scenario_task, timeout=10.0)
+                await asyncio.wait_for(game.scenario_task, timeout=20.0)
             except asyncio.TimeoutError:
                 logger.error("Next scenario generation timed out")
         if game.scenario_task.done():
@@ -531,7 +533,7 @@ async def finalize_round(winning_index: int):
                 scenario = None
 
     if not scenario:
-        scenario = copy.deepcopy(FALLBACK_SCENARIO)
+        scenario = get_next_fallback_scenario(game.settings.mode)
 
     # Start next round
     await start_round(scenario)
