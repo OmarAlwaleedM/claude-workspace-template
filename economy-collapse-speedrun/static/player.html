@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Economy Collapse Speedrun</title>
+<title>Econoland</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 <style>
@@ -161,7 +161,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       <rect x="40" y="80" width="40" height="10" rx="5" fill="#a855f7" opacity="0.3"/>
       <text x="60" y="88" text-anchor="middle" fill="#fff" font-size="7" font-weight="bold">JOIN</text>
     </svg>
-    <div class="join-title">ECONOMY COLLAPSE</div>
+    <div class="join-title">ECONOLAND</div>
     <div class="join-subtitle">Enter your name to join the game</div>
     <form class="join-form" id="joinForm">
       <input type="text" class="name-input" id="nameInput" placeholder="Your name" maxlength="20" autocomplete="off" autocapitalize="words">
@@ -266,6 +266,8 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   let ws = null;
   let hasVoted = false;
   let timerInterval = null;
+  let currentTimerEl = null;
+  let localRemaining = 0;
 
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -282,16 +284,27 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   function startTimer(elId, seconds) {
     clearInterval(timerInterval);
     const el = document.getElementById(elId);
-    let remaining = seconds;
-    if (el) { el.textContent = remaining; el.classList.remove('urgent'); }
+    currentTimerEl = el;
+    localRemaining = seconds;
+    if (el) { el.textContent = localRemaining; el.classList.remove('urgent'); }
     timerInterval = setInterval(() => {
-      remaining--;
-      if (remaining <= 0) { remaining = 0; clearInterval(timerInterval); }
-      if (el) {
-        el.textContent = remaining;
-        if (remaining <= 5) el.classList.add('urgent');
+      localRemaining--;
+      if (localRemaining <= 0) { localRemaining = 0; clearInterval(timerInterval); }
+      if (currentTimerEl) {
+        currentTimerEl.textContent = localRemaining;
+        if (localRemaining <= 5) currentTimerEl.classList.add('urgent');
+        else currentTimerEl.classList.remove('urgent');
       }
     }, 1000);
+  }
+
+  function syncTimer(serverRemaining) {
+    if (currentTimerEl) {
+      localRemaining = serverRemaining;
+      currentTimerEl.textContent = serverRemaining;
+      if (serverRemaining <= 5) currentTimerEl.classList.add('urgent');
+      else currentTimerEl.classList.remove('urgent');
+    }
   }
 
   // WebSocket
@@ -391,6 +404,12 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
           input.focus();
         } else {
           showScreen('PeopleWatch');
+        }
+        break;
+
+      case 'timer':
+        if (msg.phase_remaining !== undefined) {
+          syncTimer(msg.phase_remaining);
         }
         break;
 

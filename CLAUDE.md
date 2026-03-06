@@ -130,9 +130,9 @@ If yes to any, update the relevant sections. This file must always reflect the c
 
 ## Active Projects
 
-### Economy Collapse Speedrun v2 — Parliament Edition (`economy-collapse-speedrun/`)
+### Econoland — Parliament Edition (`economy-collapse-speedrun/`)
 
-Live multiplayer political simulation for a Python class presentation. A randomly elected parliament writes policy proposals on their phones (visible live on the projector, character by character), the rest of the class votes, and an AI secretly grades every proposal — revealed at game over with witty commentary. Two modes: Constructive (build economy, names revealed) and Destructive (collapse it, anonymous).
+Live multiplayer political simulation for a Python class presentation. A randomly elected parliament writes policy proposals on their phones (visible live on the projector, character by character), the rest of the class votes, and an AI secretly grades every proposal — revealed at game over with witty commentary. Two modes: Constructive (build economy, names revealed) and Destructive (collapse it, anonymous). Round-based system (3/5/7 rounds) with host End Game button.
 
 **Tech:** FastAPI + WebSockets + OpenRouter (Grok) + vanilla HTML/JS + ngrok
 

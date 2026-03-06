@@ -1,19 +1,56 @@
-import copy
-import json
-import logging
+"""
+llm.py — AI integration layer using the OpenRouter API.
 
-import httpx
+This module handles ALL interactions with the Large Language Model (LLM).
+The game uses AI for three distinct purposes:
 
-import config
+1. **Scenario Generation** (generate_scenario):
+   Creates economic crisis headlines and descriptions each round, based on
+   the current economy state and what happened in previous rounds. The AI
+   picks different topics each round and adapts to the game mode.
 
+2. **Proposal Evaluation** (evaluate_proposals):
+   After parliament writes proposals and people vote, the AI secretly judges
+   each proposal with a quality score (0-100), economic impacts (how it affects
+   GDP, employment, etc.), and a witty one-liner commentary. These hidden
+   scores are revealed at game over for the big "AI reveal" moment.
+
+3. **End-Game Narrative** (generate_narrative):
+   Generates a satirical 2-3 sentence summary of the entire game, referencing
+   actual policies that were passed. Displayed on the game over screen.
+
+Technical details:
+    - Uses OpenRouter (openrouter.ai) as a unified API gateway to access LLMs
+    - All API calls are async (non-blocking) using httpx
+    - Includes retry logic: if the first call fails, it retries once with a
+      "please return valid JSON" nudge
+    - Fallback scenarios and evaluations are provided if AI calls fail entirely
+    - JSON responses are parsed with error handling for common LLM formatting issues
+"""
+
+# ---- Standard Library Imports ----
+import copy       # For deep-copying fallback scenarios
+import json       # For JSON encoding/decoding (API requests and responses)
+import logging    # For debug/error logging
+
+# ---- Third-Party Imports ----
+import httpx      # Async HTTP client for making API requests
+
+# ---- Project Imports ----
+import config     # API keys, model name, and other configuration
+
+# Set up logger for this module — messages appear as "llm: ..."
 logger = logging.getLogger(__name__)
 
+# The OpenRouter API endpoint — all LLM requests go through this single URL
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # ============================================================
-# Real-world economic context (Feb–Mar 2026)
-# Organized by domain so the AI picks a DIFFERENT one each round
+# Real-World Economic Context (Feb–Mar 2026)
 # ============================================================
+# This context is injected into scenario generation prompts so the AI
+# can reference real events and create more relevant, topical scenarios.
+# Organized by domain so the AI picks a DIFFERENT topic each round.
 
 ECONOMIC_CONTEXT = """\
 ## Trade & Tariffs
@@ -48,11 +85,14 @@ ECONOMIC_CONTEXT = """\
 # ============================================================
 # PROMPT 1: Scenario Generation
 # ============================================================
+# This prompt template is filled with game state data and sent to the LLM
+# to generate a new economic crisis scenario each round. The LLM returns
+# a JSON object with a headline, description, and news ticker items.
 
 SCENARIO_PROMPT_TEMPLATE = """\
 # Role
 
-You generate economic crisis scenarios for a LIVE university classroom game called "Economy Collapse Speedrun".
+You generate economic crisis scenarios for a LIVE university classroom game called "Econoland".
 The players are the Parliament of ECONOLAND — a fictional modern European country.
 University students (aged 18-25) play as Parliament members writing policy proposals.
 
@@ -106,9 +146,12 @@ Use these loosely as inspiration. Pick a DIFFERENT topic each round.
 
 Return ONLY valid JSON, nothing else:
 
-{{"headline": "max 12 words — punchy, entertaining headline with personality", "description": "2-3 sentences. Explain what happened, the impact, and end with the mode-appropriate question to Parliament.", "news_ticker": ["8 items total: 5 funny/snarky/trolling breaking news headlines about this scenario (be VERY funny — roast politicians, use internet humor, make the class laugh), PLUS 3 hints in the style of 'HINT: [suggestion]' that suggest specific policy ideas Parliament could write"]}}
+{{"headline": "max 10 words — punchy, entertaining headline with personality", "description": "1-2 sentences max. State the crisis clearly and end with the question to Parliament.", "news_ticker": ["5 items total: 3 funny/snarky breaking news headlines about this scenario, PLUS 2 hints in the style of 'HINT: [suggestion]' that suggest specific policy ideas Parliament could write"]}}
 """
 
+# ---- Mode-specific instructions injected into the scenario prompt ----
+# These tell the AI how to frame the scenario based on whether players
+# are trying to SAVE or DESTROY the economy.
 MODE_INSTRUCTIONS = {
     "constructive": """## CONSTRUCTIVE MODE — SAVE THE ECONOMY
 Parliament's job is to SAVE Econoland's economy. Present a real economic crisis and challenge them to propose the SMARTEST policy to fix it.
@@ -136,6 +179,9 @@ These help Parliament brainstorm hilariously bad policies.""",
 # ============================================================
 # PROMPT 2: Proposal Evaluation
 # ============================================================
+# This prompt is used to have the AI judge each parliament member's proposal.
+# The AI returns quality scores, economic impacts, and witty commentary.
+# These scores are HIDDEN during the game and revealed at game over.
 
 EVALUATION_PROMPT_TEMPLATE = """\
 # Role
@@ -179,26 +225,27 @@ Each impact is an integer from -30 to +30. Must be somewhat economically plausib
 # AI Commentary Rules
 
 - Be FUNNY and confident — like a TV host commentating on bad (or great) decisions
-- Light roasts of politicians, economic memes, and snarky observations are all good
-- Keep it to 1-2 SHORT sentences max
+- Keep it to 1 SHORT punchy sentence — like a tweet, not a paragraph
 - Reference the actual policy and its economic logic (or hilariously bad logic)
 
 # Output
 
 Return ONLY valid JSON, nothing else:
 
-{{"evaluations": [{{"proposal_index": 0, "quality_score": 50, "impacts": {{"gdp": 0, "employment": 0, "inflation": 0, "public_trust": 0, "trade_balance": 0, "national_debt": 0}}, "destruction_points": 0, "ai_commentary": "Funny 1-2 sentence roast or praise that will make the whole class laugh"}}]}}
+{{"evaluations": [{{"proposal_index": 0, "quality_score": 50, "impacts": {{"gdp": 0, "employment": 0, "inflation": 0, "public_trust": 0, "trade_balance": 0, "national_debt": 0}}, "destruction_points": 0, "ai_commentary": "One punchy sentence — roast or praise"}}]}}
 """
 
 # ============================================================
 # PROMPT 3: End-Game Narrative
 # ============================================================
+# This prompt generates a satirical summary of the entire game,
+# displayed on the game over screen as the final "news broadcast".
 
 NARRATIVE_PROMPT_TEMPLATE = """\
 You are a dramatic TV news anchor on Econoland National TV delivering the FINAL REPORT on what happened to the economy.
 Think: a confident, slightly unhinged news anchor wrapping up a wild story.
 
-Write 3-4 sentences summarizing the economic journey. Reference the actual policies that were passed and roast or praise them.
+Write 2-3 sentences summarizing the economic journey. Reference the actual policies that were passed and roast or praise them.
 Light political humor, gentle roasts, and entertaining commentary. Make the class laugh while also summarizing what happened.
 
 Country: Econoland | Mode: {mode} | Rounds: {rounds_played} | Collapsed: {collapsed}
@@ -209,8 +256,11 @@ Policies enacted: {policy_list}
 Audience: university economics students who want to be entertained. Be dramatic and funny!"""
 
 # ============================================================
-# Fallback scenario
+# Fallback Scenarios
 # ============================================================
+# If the AI fails to generate a scenario (network issues, rate limits, etc.),
+# we use these pre-written fallback scenarios instead. The game cycles through
+# them so each round gets a different one even without AI.
 
 FALLBACK_SCENARIOS = [
     {
@@ -285,26 +335,46 @@ FALLBACK_SCENARIOS = [
     },
 ]
 
+# Tracks which fallback scenario to use next (cycles through the list)
 _fallback_index = 0
 
+
 def get_next_fallback_scenario(mode: str = "destructive") -> dict:
-    """Return a different fallback scenario each time, cycling through the list. Adds mode-specific hints."""
+    """
+    Return a different fallback scenario each time, cycling through the list.
+
+    When the AI fails to generate a scenario, this function provides a
+    pre-written alternative. It cycles through FALLBACK_SCENARIOS using a
+    global index, so each round gets a different scenario even without AI.
+
+    The function also adds mode-specific hints to the news ticker and adjusts
+    the description's closing question to match the game mode.
+
+    Args:
+        mode: Game mode — "destructive" or "constructive"
+
+    Returns:
+        dict: A scenario with "headline", "description", and "news_ticker"
+    """
     global _fallback_index
+    # Deep copy to avoid modifying the original template
     scenario = copy.deepcopy(FALLBACK_SCENARIOS[_fallback_index % len(FALLBACK_SCENARIOS)])
+    # Advance the index for next time (wraps around when it exceeds list length)
     _fallback_index += 1
 
-    # Add mode-specific hint to news ticker and fix the description ending
+    # Add mode-specific hint to the news ticker and fix the description ending
     if mode == "destructive":
+        # Add a destructive hint
         scenario["news_ticker"].append("HINT: What's the WORST policy you could pass right now?")
-        scenario["news_ticker"].append("HINT: Think — what would make this crisis 10x worse?")
-        # Replace the ending question with destructive version
+        # Replace the ending question with a destructive version
         desc = scenario["description"]
         if "Parliament of Econoland:" in desc:
             base = desc.split("Parliament of Econoland:")[0]
             scenario["description"] = base + "Parliament of Econoland: what's your WORST policy to make this even more chaotic?"
     else:
+        # Add a constructive hint
         scenario["news_ticker"].append("HINT: Think about what policy could stabilize this situation...")
-        scenario["news_ticker"].append("HINT: Consider subsidies, regulations, emergency funds, or trade deals")
+        # Replace the ending question with a constructive version
         desc = scenario["description"]
         if "Parliament of Econoland:" in desc:
             base = desc.split("Parliament of Econoland:")[0]
@@ -312,79 +382,141 @@ def get_next_fallback_scenario(mode: str = "destructive") -> dict:
 
     return scenario
 
-# Keep backward compatibility
-FALLBACK_SCENARIO = FALLBACK_SCENARIOS[0]
-
-FALLBACK_EVALUATIONS = []  # populated dynamically
-
 
 # ============================================================
 # API Call Helpers
 # ============================================================
 
 def _get_headers() -> dict:
+    """
+    Build HTTP headers required for OpenRouter API requests.
+
+    OpenRouter requires:
+    - Authorization: Bearer token with the API key
+    - Content-Type: JSON
+    - HTTP-Referer: identifies the calling application
+    - X-Title: display name for the application in OpenRouter's dashboard
+
+    Returns:
+        dict: HTTP headers for the API request
+    """
     return {
         "Authorization": f"Bearer {config.OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
         "HTTP-Referer": "http://localhost:8000",
-        "X-Title": "Economy Collapse Speedrun",
+        "X-Title": "Econoland",
     }
 
 
 async def _call_llm(system_prompt: str, user_message: str, temperature: float = 0.9, max_tokens: int = 1000) -> str:
-    """Make a single LLM call and return the content string."""
+    """
+    Make a single LLM API call via OpenRouter and return the response text.
+
+    This is the core function that all AI features use. It sends a system
+    prompt (instructions) and a user message (the specific request) to the
+    LLM, then returns the generated text.
+
+    Features:
+    - Retries once on failure with a "please return valid JSON" nudge
+    - Strips markdown code fences (```json ... ```) from the response
+    - Uses a 30-second timeout to prevent hanging
+    - Raises RuntimeError if both attempts fail
+
+    Args:
+        system_prompt: Instructions that set the AI's role and context
+        user_message: The specific request (e.g., "Generate the next scenario")
+        temperature: Controls randomness (0.0 = deterministic, 1.0 = creative)
+        max_tokens: Maximum length of the AI's response
+
+    Returns:
+        str: The raw text content of the AI's response (with code fences stripped)
+
+    Raises:
+        RuntimeError: If both API call attempts fail
+    """
+    # Build the API request payload
     payload = {
-        "model": config.OPENROUTER_MODEL,
+        "model": config.OPENROUTER_MODEL,       # Which LLM model to use
         "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
+            {"role": "system", "content": system_prompt},    # AI's role/instructions
+            {"role": "user", "content": user_message},       # Our specific request
         ],
-        "temperature": temperature,
-        "max_tokens": max_tokens,
+        "temperature": temperature,    # Higher = more creative/random
+        "max_tokens": max_tokens,      # Max response length
     }
 
+    # Try up to 2 times (retry once on failure)
     for attempt in range(2):
         try:
+            # Create an async HTTP client with a 30-second timeout
             async with httpx.AsyncClient(timeout=30.0) as client:
+                # Send the POST request to OpenRouter
                 resp = await client.post(OPENROUTER_URL, json=payload, headers=_get_headers())
+                # Raise an exception if the HTTP status code indicates an error
                 resp.raise_for_status()
+                # Parse the JSON response
                 result = resp.json()
 
+            # Extract the AI's response text from the API response structure
             content = result["choices"][0]["message"]["content"].strip()
-            # Strip markdown code fences
+
+            # Strip markdown code fences that LLMs sometimes wrap JSON in
+            # e.g., ```json\n{"key": "value"}\n``` → {"key": "value"}
             if content.startswith("```"):
                 content = content.split("\n", 1)[1] if "\n" in content else content[3:]
             if content.endswith("```"):
                 content = content[:-3]
+
             return content.strip()
 
         except (httpx.HTTPError, KeyError) as e:
+            # Log the failure
             logger.warning(f"LLM call attempt {attempt + 1} failed: {e}")
             if attempt == 0:
+                # First failure: retry with a nudge to return valid JSON
                 payload["messages"].append(
                     {"role": "user", "content": "That was invalid. Return ONLY valid JSON, nothing else."}
                 )
                 continue
+            # Second failure: give up and raise
             raise
 
     raise RuntimeError("Failed LLM call")
 
 
 def _parse_json(content: str) -> dict:
-    """Parse JSON from LLM response, handling common issues."""
+    """
+    Parse JSON from an LLM response, handling common formatting issues.
+
+    LLMs sometimes return JSON wrapped in extra text or explanation.
+    This function first tries to parse the raw content, and if that fails,
+    it looks for a JSON object (starting with { and ending with })
+    within the response text.
+
+    Args:
+        content: Raw text response from the LLM
+
+    Returns:
+        dict: Parsed JSON object
+
+    Raises:
+        json.JSONDecodeError: If no valid JSON can be found in the response
+    """
     try:
+        # Try parsing the entire response as JSON
         return json.loads(content)
     except json.JSONDecodeError:
-        # Try to find JSON object in the response
-        start = content.find("{")
-        end = content.rfind("}") + 1
+        # If that fails, try to find a JSON object embedded in the text
+        start = content.find("{")       # Find the first opening brace
+        end = content.rfind("}") + 1    # Find the last closing brace
         if start >= 0 and end > start:
             return json.loads(content[start:end])
+        # If no JSON object found at all, re-raise the error
         raise
 
 
 # ============================================================
-# Public Functions
+# Public Functions — Called by server.py
 # ============================================================
 
 async def generate_scenario(
@@ -393,10 +525,30 @@ async def generate_scenario(
     round_number: int,
     mode: str = "destructive",
 ) -> dict:
-    """Generate a scenario (headline + description + news_ticker)."""
+    """
+    Generate an economic crisis scenario for a new round.
+
+    Sends the current economy state, round history, and game mode to the LLM,
+    which generates a creative scenario with a headline, description, and
+    news ticker items. The LLM avoids repeating topics from previous rounds.
+
+    Args:
+        economy_state: Current economy indicator values (from Economy.get_state())
+        round_history: Compact history of past rounds (from Game.get_round_history_for_llm())
+        round_number: Which round this scenario is for (1-based)
+        mode: Game mode — "destructive" or "constructive"
+
+    Returns:
+        dict: Scenario with keys "headline", "description", and "news_ticker"
+
+    Raises:
+        ValueError: If the LLM response is missing required keys
+        RuntimeError: If the API call fails after retries
+    """
+    # Get the mode-specific instructions for the prompt
     mode_instruction = MODE_INSTRUCTIONS.get(mode, MODE_INSTRUCTIONS["destructive"])
 
-    # Build used topics list from previous rounds
+    # Build a list of already-used scenario topics so the AI avoids repeats
     used_topics = ""
     if round_history:
         for i, r in enumerate(round_history, 1):
@@ -405,6 +557,7 @@ async def generate_scenario(
     else:
         used_topics = "(none — this is round 1)"
 
+    # Fill in the prompt template with game data
     system_prompt = SCENARIO_PROMPT_TEMPLATE.format(
         mode=mode,
         economy_state_json=json.dumps(economy_state, indent=2),
@@ -415,13 +568,15 @@ async def generate_scenario(
         mode_instruction=mode_instruction,
     )
 
-    content = await _call_llm(system_prompt, "Generate the next scenario.", temperature=1.0, max_tokens=600)
+    # Call the LLM and parse the JSON response
+    content = await _call_llm(system_prompt, "Generate the next scenario.", temperature=1.0, max_tokens=400)
     data = _parse_json(content)
 
-    # Validate
+    # Validate that all required keys are present
     for key in ("headline", "description", "news_ticker"):
         if key not in data:
             raise ValueError(f"Missing key: {key}")
+    # Ensure news_ticker is always a list (LLM might return a single string)
     if not isinstance(data["news_ticker"], list):
         data["news_ticker"] = [str(data["news_ticker"])]
 
@@ -434,8 +589,28 @@ async def evaluate_proposals(
     economy_state: dict,
     mode: str = "destructive",
 ) -> list[dict]:
-    """Evaluate parliament proposals. Returns list of evaluation dicts."""
-    # Build proposals text
+    """
+    Have the AI evaluate all parliament proposals for the current round.
+
+    The AI judges each proposal and returns:
+    - quality_score (0-100): how good/destructive the proposal is
+    - impacts (dict): how it would affect each economic indicator (-30 to +30)
+    - destruction_points: overall impact on economy score
+    - ai_commentary: a witty one-liner about the proposal
+
+    These scores are HIDDEN during the game and revealed at game over.
+
+    Args:
+        scenario: The current round's scenario (headline + description)
+        proposals: List of proposal dicts with "index" and "text" keys
+        economy_state: Current economy indicator values
+        mode: Game mode — "destructive" or "constructive"
+
+    Returns:
+        list[dict]: One evaluation dict per proposal, each containing:
+                    proposal_index, quality_score, impacts, destruction_points, ai_commentary
+    """
+    # Build a numbered list of proposals for the AI to evaluate
     proposals_text = ""
     for p in proposals:
         text = p.get("text", "").strip()
@@ -443,6 +618,7 @@ async def evaluate_proposals(
             text = "(empty — no proposal submitted)"
         proposals_text += f"{p['index']}. {text}\n"
 
+    # Fill in the evaluation prompt template
     system_prompt = EVALUATION_PROMPT_TEMPLATE.format(
         mode=mode,
         headline=scenario.get("headline", ""),
@@ -451,31 +627,36 @@ async def evaluate_proposals(
         proposals_text=proposals_text,
     )
 
-    content = await _call_llm(system_prompt, "Evaluate these proposals.", temperature=0.5, max_tokens=1500)
+    # Call the LLM with lower temperature for more consistent grading
+    content = await _call_llm(system_prompt, "Evaluate these proposals.", temperature=0.5, max_tokens=800)
     data = _parse_json(content)
 
+    # Extract evaluations from the response
     evaluations = data.get("evaluations", [])
 
-    # Validate and normalize
+    # Validate and normalize each evaluation to ensure consistent data format
     impact_keys = {"gdp", "employment", "inflation", "public_trust", "trade_balance", "national_debt"}
     normalized = []
     for ev in evaluations:
         entry = {
             "proposal_index": int(ev.get("proposal_index", 0)),
+            # Clamp quality score to 0-100 range
             "quality_score": max(0, min(100, int(ev.get("quality_score", 50)))),
             "impacts": {},
             "destruction_points": int(ev.get("destruction_points", 0)),
             "ai_commentary": str(ev.get("ai_commentary", "")),
         }
+        # Normalize each economic impact to the [-30, +30] range
         raw_impacts = ev.get("impacts", {})
         for k in impact_keys:
             entry["impacts"][k] = max(-30, min(30, int(raw_impacts.get(k, 0))))
         normalized.append(entry)
 
-    # Ensure we have an evaluation for every proposal
+    # Ensure every proposal has an evaluation (fill in defaults for any missing)
     existing_indices = {e["proposal_index"] for e in normalized}
     for p in proposals:
         if p["index"] not in existing_indices:
+            # Add a default evaluation for proposals the AI didn't evaluate
             normalized.append({
                 "proposal_index": p["index"],
                 "quality_score": 50,
@@ -495,7 +676,27 @@ async def generate_narrative(
     policy_list: list[str],
     collapsed: bool,
 ) -> str:
-    """Generate an end-game satirical narrative."""
+    """
+    Generate a satirical end-game narrative summarizing the entire game.
+
+    The AI writes 2-3 sentences as a dramatic TV news anchor, referencing
+    actual policies that were passed and commenting on the economy's fate.
+    This is displayed on the game over screen.
+
+    If the AI call fails, a hardcoded fallback narrative is returned instead.
+
+    Args:
+        mode: Game mode ("destructive" or "constructive")
+        starting_state: Economy values at game start
+        final_state: Economy values at game end
+        rounds_played: How many rounds were completed
+        policy_list: List of winning policy texts from each round
+        collapsed: Whether the economy collapsed (destructive mode early win)
+
+    Returns:
+        str: The satirical narrative text (2-3 sentences)
+    """
+    # Fill in the narrative prompt template
     system_prompt = NARRATIVE_PROMPT_TEMPLATE.format(
         mode=mode,
         starting_state=json.dumps(starting_state),
@@ -506,10 +707,12 @@ async def generate_narrative(
     )
 
     try:
-        content = await _call_llm(system_prompt, "Write the summary.", temperature=1.0, max_tokens=300)
+        # Call the LLM with high temperature for creative writing
+        content = await _call_llm(system_prompt, "Write the summary.", temperature=1.0, max_tokens=200)
         return content
     except Exception as e:
         logger.error(f"Narrative generation failed: {e}")
+        # Return a hardcoded fallback narrative based on whether the economy collapsed
         if collapsed:
             return "The economy didn't just collapse — it speedran into the ground like a true champion. Future economists will study this disaster for generations. Tremendous failure. Really tremendous."
         else:
@@ -517,14 +720,29 @@ async def generate_narrative(
 
 
 def get_fallback_evaluations(num_proposals: int) -> list[dict]:
-    """Return fallback evaluations if AI grading fails."""
+    """
+    Return fallback evaluations when the AI grading fails.
+
+    If the AI can't evaluate proposals (network error, timeout, etc.),
+    this function provides neutral default evaluations — all proposals
+    get a score of 50 with zero impacts. The commentary lets players
+    know the AI was unavailable.
+
+    Args:
+        num_proposals: How many proposals need evaluations
+
+    Returns:
+        list[dict]: One default evaluation per proposal with neutral scores
+    """
+    # The 6 economic indicator keys
     impact_keys = ["gdp", "employment", "inflation", "public_trust", "trade_balance", "national_debt"]
+    # Generate a neutral evaluation for each proposal
     return [
         {
             "proposal_index": i,
-            "quality_score": 50,
-            "impacts": {k: 0 for k in impact_keys},
-            "destruction_points": 0,
+            "quality_score": 50,                              # Neutral score
+            "impacts": {k: 0 for k in impact_keys},          # Zero impact on all indicators
+            "destruction_points": 0,                          # No score change
             "ai_commentary": "AI was too slow to judge this one. Everyone gets a participation trophy. Sad!",
         }
         for i in range(num_proposals)

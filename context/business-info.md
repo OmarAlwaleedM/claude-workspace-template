@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-**Economy Collapse Speedrun v2 — Parliament Edition** — a multiplayer classroom political simulation built in Python for a university programming course.
+**Econoland v2 — Parliament Edition** — a multiplayer classroom political simulation built in Python for a university programming course.
 
 ### The Game in One Sentence
 
@@ -24,7 +24,7 @@ This is NOT a quiz. The key differentiators:
 
 ### Core Mechanics
 
-1. **Settings screen**: Host configures mode, duration, parliament size, timers, anonymous/revealed
+1. **Settings screen**: Host configures mode, number of rounds (3/5/7), parliament size, timers, anonymous/revealed
 2. **Lobby**: QR code on projector → students join on phones → host clicks Start
 3. **Role assignment**: System randomly picks 3-5 parliament members, rest are "The People"
 4. **Each round (3 phases)**:

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Economy Collapse Speedrun — Host</title>
+<title>Econoland — Host</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 <style>
@@ -20,8 +20,9 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .round-badge{background:linear-gradient(135deg,#00b4d8,#0096c7);color:#fff;font-size:12px;font-weight:800;padding:6px 14px;border-radius:8px;text-transform:uppercase;letter-spacing:1px}
 .phase-badge{background:rgba(168,85,247,0.2);color:#a855f7;font-size:12px;font-weight:800;padding:6px 14px;border-radius:8px;text-transform:uppercase;letter-spacing:1px}
 .top-right{display:flex;align-items:center;gap:16px}
-.game-timer{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:#fbbf24}
-.destruction-badge{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:12px;font-weight:800;padding:6px 14px;border-radius:8px}
+.end-game-btn{font-family:'Inter',sans-serif;font-size:11px;font-weight:800;padding:6px 14px;border-radius:8px;background:#ef4444;color:#fff;border:none;cursor:pointer;text-transform:uppercase;letter-spacing:1px;display:none}
+.end-game-btn:hover{background:#dc2626}
+.score-badge{color:#fff;font-size:12px;font-weight:800;padding:6px 14px;border-radius:8px}
 
 /* Main content area */
 .main-content{flex:1;display:flex;overflow:hidden}
@@ -73,10 +74,13 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 /* Settings options */
 .setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
 .setting-name{font-size:14px;font-weight:600}
-.setting-options{display:flex;gap:6px}
-.setting-opt{padding:6px 14px;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#8899a6;cursor:pointer;transition:all .15s}
-.setting-opt:hover{border-color:rgba(255,255,255,0.2);color:#fff}
-.setting-opt.active{background:rgba(0,180,216,0.15);border-color:#00b4d8;color:#00b4d8}
+.stepper{display:flex;align-items:center;gap:0}
+.stepper-btn{width:36px;height:36px;font-size:18px;font-weight:800;font-family:'Inter',sans-serif;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.stepper-btn:first-child{border-radius:8px 0 0 8px}
+.stepper-btn:last-child{border-radius:0 8px 8px 0}
+.stepper-btn:hover{background:rgba(0,180,216,0.15);border-color:#00b4d8}
+.stepper-btn:active{transform:scale(0.95)}
+.stepper-value{min-width:60px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:#00b4d8;background:rgba(0,180,216,0.08);border-top:1px solid rgba(255,255,255,0.12);border-bottom:1px solid rgba(255,255,255,0.12)}
 .setting-toggle{position:relative;width:44px;height:24px;background:rgba(255,255,255,0.1);border-radius:12px;cursor:pointer;transition:background .2s}
 .setting-toggle.on{background:#00b4d8}
 .setting-toggle .knob{position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s}
@@ -92,7 +96,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .lobby-title{font-size:24px;font-weight:900;margin-bottom:16px}
 .qr-container{background:#fff;border-radius:16px;padding:16px;display:inline-block;margin-bottom:16px}
 .qr-container img{width:200px;height:200px}
-.lobby-url{font-size:12px;color:#8899a6;margin-bottom:20px;word-break:break-all}
+.lobby-url{font-size:16px;color:#fff;font-weight:700;margin-bottom:20px;word-break:break-all;user-select:all}
 .player-count{font-size:16px;font-weight:700;color:#00b4d8;margin-bottom:12px}
 .player-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px;max-height:150px;overflow-y:auto}
 .player-chip{background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.25);color:#00b4d8;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700}
@@ -197,10 +201,11 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       <div class="round-badge" id="roundBadge">LOBBY</div>
       <div class="mode-badge" id="modeBadge" style="padding:4px 14px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;background:rgba(239,68,68,0.2);color:#ef4444;border:1px solid #ef4444">💥 DESTROY</div>
       <div class="phase-badge" id="phaseBadge">SETTINGS</div>
+      <div id="phaseTimer" style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#fbbf24;display:none"></div>
     </div>
     <div class="top-right">
-      <div class="game-timer" id="gameTimer">--:--</div>
-      <div class="destruction-badge" id="destructionBadge">DESTRUCTION: 0</div>
+      <button class="end-game-btn" id="endGameBtn" onclick="endGame()">END GAME</button>
+      <div class="score-badge" id="scoreBadge" style="background:linear-gradient(135deg,#ef4444,#dc2626)">DESTRUCTION: 0</div>
     </div>
   </div>
 
@@ -255,7 +260,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
           <div class="reporter-name">📺 ECONOLAND NEWS</div>
         </div>
         <div class="speech-bubble" id="reporterBubble">
-          <div class="speech-headline" id="reporterHeadline">Welcome to Economy Collapse Speedrun!</div>
+          <div class="speech-headline" id="reporterHeadline">Welcome to Econoland!</div>
           <div class="speech-desc" id="reporterDesc">Configure your game settings and get ready to play.</div>
         </div>
       </div>
@@ -302,7 +307,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       <!-- Settings Overlay -->
       <div id="settings-overlay" class="overlay active">
         <div class="settings-card">
-          <div class="settings-title">ECONOMY COLLAPSE SPEEDRUN</div>
+          <div class="settings-title">ECONOLAND</div>
           <div class="settings-subtitle">Parliament of Econoland — Configure your game</div>
           <div style="background:rgba(0,180,216,0.08);border:1px solid rgba(0,180,216,0.2);border-radius:12px;padding:14px;margin-bottom:20px;text-align:left;font-size:13px;line-height:1.6;color:#8899a6">
             <div style="font-weight:800;color:#00b4d8;margin-bottom:6px;font-size:14px">🏛 How It Works</div>
@@ -318,47 +323,46 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
               <div class="mode-card destructive selected" data-mode="destructive" onclick="selectMode('destructive')">
                 <div class="mode-icon">💥</div>
                 <div class="mode-name">Destruction</div>
-                <div class="mode-desc">Race to collapse the economy as fast as possible</div>
+                <div class="mode-desc">Race to destroy Econoland's economy</div>
               </div>
               <div class="mode-card constructive" data-mode="constructive" onclick="selectMode('constructive')">
                 <div class="mode-icon">🏗️</div>
                 <div class="mode-name">Constructive</div>
-                <div class="mode-desc">Work together to save and grow the economy</div>
+                <div class="mode-desc">Build the strongest economy for Econoland</div>
               </div>
             </div>
           </div>
 
           <div class="setting-row">
-            <div class="setting-name">⏱ Game Duration</div>
-            <div class="setting-options" id="durationOpts">
-              <div class="setting-opt" data-val="180" onclick="selectSetting('duration',180,this)">3 min</div>
-              <div class="setting-opt active" data-val="300" onclick="selectSetting('duration',300,this)">5 min</div>
-              <div class="setting-opt" data-val="420" onclick="selectSetting('duration',420,this)">7 min</div>
-              <div class="setting-opt" data-val="600" onclick="selectSetting('duration',600,this)">10 min</div>
+            <div class="setting-name">🔄 Number of Rounds</div>
+            <div class="stepper">
+              <button class="stepper-btn" onclick="stepSetting('num_rounds', -1)">-</button>
+              <div class="stepper-value" id="val_num_rounds">5</div>
+              <button class="stepper-btn" onclick="stepSetting('num_rounds', 1)">+</button>
             </div>
           </div>
           <div class="setting-row">
             <div class="setting-name">🏛 Parliament Size</div>
-            <div class="setting-options" id="parlSizeOpts">
-              <div class="setting-opt" data-val="3" onclick="selectSetting('parlSize',3,this)">3</div>
-              <div class="setting-opt active" data-val="4" onclick="selectSetting('parlSize',4,this)">4</div>
-              <div class="setting-opt" data-val="5" onclick="selectSetting('parlSize',5,this)">5</div>
+            <div class="stepper">
+              <button class="stepper-btn" onclick="stepSetting('parliament_size', -1)">-</button>
+              <div class="stepper-value" id="val_parliament_size">4</div>
+              <button class="stepper-btn" onclick="stepSetting('parliament_size', 1)">+</button>
             </div>
           </div>
           <div class="setting-row">
             <div class="setting-name">✍️ Writing Time</div>
-            <div class="setting-options" id="writeTimeOpts">
-              <div class="setting-opt" data-val="60" onclick="selectSetting('writeTime',60,this)">1min</div>
-              <div class="setting-opt" data-val="90" onclick="selectSetting('writeTime',90,this)">90s</div>
-              <div class="setting-opt active" data-val="120" onclick="selectSetting('writeTime',120,this)">2min</div>
+            <div class="stepper">
+              <button class="stepper-btn" onclick="stepSetting('proposal_time', -15)">-</button>
+              <div class="stepper-value" id="val_proposal_time">2:00</div>
+              <button class="stepper-btn" onclick="stepSetting('proposal_time', 15)">+</button>
             </div>
           </div>
           <div class="setting-row">
             <div class="setting-name">🗳 Voting Time</div>
-            <div class="setting-options" id="voteTimeOpts">
-              <div class="setting-opt" data-val="30" onclick="selectSetting('voteTime',30,this)">30s</div>
-              <div class="setting-opt active" data-val="45" onclick="selectSetting('voteTime',45,this)">45s</div>
-              <div class="setting-opt" data-val="60" onclick="selectSetting('voteTime',60,this)">1min</div>
+            <div class="stepper">
+              <button class="stepper-btn" onclick="stepSetting('voting_time', -5)">-</button>
+              <div class="stepper-value" id="val_voting_time">45s</div>
+              <button class="stepper-btn" onclick="stepSetting('voting_time', 5)">+</button>
             </div>
           </div>
           <div class="setting-row">
@@ -375,6 +379,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
         <div class="lobby-card">
           <div class="lobby-title">📱 Scan to Join</div>
           <div class="qr-container"><img id="qrImage" src="/qr" alt="QR Code"></div>
+          <div style="font-size:12px;color:#8899a6;margin-bottom:4px">or visit:</div>
           <div class="lobby-url" id="lobbyUrl"></div>
           <div class="player-count" id="playerCount">0 players connected</div>
           <div class="player-list" id="playerList"></div>
@@ -400,7 +405,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   <div class="news-ticker-bar" id="newsTicker">
     <div class="ticker-label">BREAKING</div>
     <div class="ticker-content">
-      <div class="ticker-headline" id="tickerHeadline">Economy Collapse Speedrun — Waiting for game to start...</div>
+      <div class="ticker-headline" id="tickerHeadline">Econoland — Waiting for game to start...</div>
     </div>
   </div>
 
@@ -412,13 +417,15 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   let ws = null;
   let gameSettings = {
     mode: 'destructive',
-    duration_seconds: 300,
+    num_rounds: 5,
     parliament_size: 4,
     anonymous: true,
     proposal_time: 120,
     voting_time: 45,
     tiebreaker_time: 10
   };
+  let currentMode = 'destructive';
+  let numRounds = 5;
   let minPlayers = 2;
   let playerCount = 0;
   let gameStarted = false;
@@ -427,32 +434,60 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   // ===== Settings UI =====
   window.selectMode = function(mode) {
     gameSettings.mode = mode;
+    currentMode = mode;
     document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
     document.querySelector('.mode-card[data-mode="'+mode+'"]').classList.add('selected');
     var mb = document.getElementById('modeBadge');
+    var sb = document.getElementById('scoreBadge');
     if (mode === 'destructive') {
       mb.textContent = '💥 DESTROY';
       mb.style.background = 'rgba(239,68,68,0.2)';
       mb.style.color = '#ef4444';
       mb.style.border = '1px solid #ef4444';
+      sb.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
+      sb.textContent = 'DESTRUCTION: 0';
     } else {
       mb.textContent = '🛡️ SAVE';
       mb.style.background = 'rgba(34,197,94,0.2)';
       mb.style.color = '#22c55e';
       mb.style.border = '1px solid #22c55e';
+      sb.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+      sb.textContent = 'PROSPERITY: 0';
     }
     sendSettings();
   };
 
-  window.selectSetting = function(key, val, el) {
-    el.parentElement.querySelectorAll('.setting-opt').forEach(o => o.classList.remove('active'));
-    el.classList.add('active');
-    if (key === 'duration') gameSettings.duration_seconds = val;
-    else if (key === 'parlSize') gameSettings.parliament_size = val;
-    else if (key === 'writeTime') gameSettings.proposal_time = val;
-    else if (key === 'voteTime') gameSettings.voting_time = val;
+  var settingConfig = {
+    num_rounds:      { min: 1,  max: 20,  step: 1,  format: 'number' },
+    parliament_size: { min: 2,  max: 15,  step: 1,  format: 'number' },
+    proposal_time:   { min: 30, max: 300, step: 15, format: 'time'   },
+    voting_time:     { min: 15, max: 120, step: 5,  format: 'seconds' },
+  };
+
+  window.stepSetting = function(key, delta) {
+    var cfg = settingConfig[key];
+    var current = gameSettings[key] || 0;
+    var newVal = Math.max(cfg.min, Math.min(cfg.max, current + delta));
+    gameSettings[key] = newVal;
+    if (key === 'num_rounds') numRounds = newVal;
+    updateStepperDisplay(key, newVal);
     sendSettings();
   };
+
+  function updateStepperDisplay(key, val) {
+    var el = document.getElementById('val_' + key);
+    if (!el) return;
+    var cfg = settingConfig[key];
+    if (cfg.format === 'time') {
+      var m = Math.floor(val / 60);
+      var s = val % 60;
+      el.textContent = m + ':' + String(s).padStart(2, '0');
+    } else if (cfg.format === 'seconds') {
+      el.textContent = val + 's';
+    } else {
+      el.textContent = val;
+    }
+  }
 
   window.toggleAnon = function() {
     const t = document.getElementById('anonToggle');
@@ -478,6 +513,12 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     document.getElementById('lobbyStartBtn').disabled = true;
     document.getElementById('lobbyStartBtn').textContent = 'STARTING...';
     send({action: 'start'});
+  };
+
+  window.endGame = function() {
+    if (confirm('End the game now? This will show final results.')) {
+      send({action: 'terminate'});
+    }
   };
 
   // ===== Reporter Sidebar =====
@@ -603,10 +644,24 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     document.getElementById('phaseArea').style.display = 'flex';
   }
 
+  function updateScoreBadge(score, mode) {
+    var sb = document.getElementById('scoreBadge');
+    if (mode === 'constructive') {
+      sb.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+      sb.textContent = 'PROSPERITY: ' + score;
+    } else {
+      sb.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
+      sb.textContent = 'DESTRUCTION: ' + score;
+    }
+  }
+
   function renderWritingPhase(msg) {
     showPhaseArea();
-    document.getElementById('roundBadge').textContent = 'ROUND ' + (msg.round || 1);
+    if (msg.num_rounds) numRounds = msg.num_rounds;
+    if (msg.mode) currentMode = msg.mode;
+    document.getElementById('roundBadge').textContent = 'ROUND ' + (msg.round || 1) + ' / ' + numRounds;
     document.getElementById('phaseBadge').textContent = 'WRITING';
+    document.getElementById('endGameBtn').style.display = 'block';
 
     // Update reporter with scenario
     const scenario = msg.scenario || {};
@@ -618,8 +673,8 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
     // Update economy
     updateEconomy(msg.economy);
-    if (msg.destruction_score !== undefined) {
-      document.getElementById('destructionBadge').textContent = 'DESTRUCTION: ' + msg.destruction_score;
+    if (msg.score !== undefined) {
+      updateScoreBadge(msg.score, currentMode);
     }
 
     // Build phase content with Trump news desk
@@ -702,12 +757,15 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   }
 
   function renderRoundEnd(msg) {
+    document.getElementById('phaseTimer').style.display = 'none';
     document.getElementById('phaseBadge').textContent = 'RESULTS';
+    if (msg.num_rounds) numRounds = msg.num_rounds;
+    if (msg.mode) currentMode = msg.mode;
     updateReporter('Policy enacted!', '"' + (msg.winning_text || 'No policy') + '" — by ' + (msg.winning_member || 'Unknown'));
 
     updateEconomy(msg.new_economy);
-    if (msg.destruction_score !== undefined) {
-      document.getElementById('destructionBadge').textContent = 'DESTRUCTION: ' + msg.destruction_score;
+    if (msg.score !== undefined) {
+      updateScoreBadge(msg.score, currentMode);
     }
 
     const impacts = msg.impacts || {};
@@ -750,13 +808,24 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
   function renderGameOver(msg) {
     showPhaseArea();
+    document.getElementById('phaseTimer').style.display = 'none';
+    document.getElementById('endGameBtn').style.display = 'none';
     document.getElementById('roundBadge').textContent = 'GAME OVER';
-    document.getElementById('phaseBadge').textContent = msg.collapsed ? 'ECONOMY COLLAPSED' : 'TIME UP';
+    var mode = msg.mode || currentMode;
+    var subtitle = '';
+    if (mode === 'constructive') {
+      document.getElementById('phaseBadge').textContent = msg.collapsed ? 'ECONOLAND FELL!' : 'ECONOLAND SURVIVED!';
+      subtitle = msg.collapsed ? 'Econoland\'s economy has collapsed! The people suffer.' : 'Econoland\'s economy survived! The people prosper.';
+    } else {
+      document.getElementById('phaseBadge').textContent = msg.collapsed ? 'ECONOMY DESTROYED!' : 'ECONOMY SURVIVED (YOU FAILED!)';
+      subtitle = msg.collapsed ? 'The economy has been destroyed! Mission accomplished.' : 'The economy survived! You failed to destroy it.';
+    }
+    subtitle += ' — ' + (msg.rounds_played || 0) + ' rounds played';
     updateReporter('GAME OVER!', msg.narrative ? msg.narrative.substring(0, 80) + '...' : 'The economy has spoken.');
 
     let html = '<div class="gameover-container">';
     html += '<div class="go-title">GAME OVER</div>';
-    html += '<div class="go-subtitle">' + (msg.collapsed ? 'The economy has collapsed!' : 'Time\'s up! Final results are in.') + ' — ' + (msg.rounds_played || 0) + ' rounds played</div>';
+    html += '<div class="go-subtitle">' + subtitle + '</div>';
 
     if (msg.narrative) {
       html += '<div class="go-narrative">' + escapeHtml(msg.narrative) + '</div>';
@@ -884,6 +953,11 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       case 'settings_update':
         if (msg.settings) {
           gameSettings = Object.assign(gameSettings, msg.settings);
+          if (msg.settings.mode) currentMode = msg.settings.mode;
+          if (msg.settings.num_rounds) numRounds = msg.settings.num_rounds;
+          for (var key in settingConfig) {
+            if (gameSettings[key] !== undefined) updateStepperDisplay(key, gameSettings[key]);
+          }
         }
         break;
 
@@ -914,11 +988,12 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
         break;
 
       case 'timer':
-        // Update game timer
-        if (msg.game_remaining !== undefined) {
-          var mins = Math.floor(msg.game_remaining / 60);
-          var secs = msg.game_remaining % 60;
-          document.getElementById('gameTimer').textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+        var pt = document.getElementById('phaseTimer');
+        if (msg.phase_remaining !== undefined) {
+          pt.style.display = 'block';
+          pt.textContent = msg.phase_remaining + 's';
+          if (msg.phase_remaining <= 5) pt.style.color = '#ef4444';
+          else pt.style.color = '#fbbf24';
         }
         break;
 
