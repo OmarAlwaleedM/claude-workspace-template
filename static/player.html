@@ -162,7 +162,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       <text x="60" y="88" text-anchor="middle" fill="#fff" font-size="7" font-weight="bold">JOIN</text>
     </svg>
     <div class="join-title">ECONOLAND</div>
-    <div class="join-subtitle">Enter your name to join the game</div>
+    <div class="join-subtitle" id="joinSubtitle">Enter your name to join the game</div>
     <form class="join-form" id="joinForm">
       <input type="text" class="name-input" id="nameInput" placeholder="Your name" maxlength="20" autocomplete="off" autocapitalize="words">
       <button type="submit" class="join-btn" id="btnJoin">Join Game</button>
@@ -224,7 +224,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   <!-- 8: Tiebreaker -->
   <div class="screen" id="screenTiebreaker">
     <div class="tb-title">⚡ TIEBREAKER!</div>
-    <div class="tb-subtitle">It's a tie! Vote again between the top proposals.</div>
+    <div class="tb-subtitle">Parliament is tied! Vote for the winner!</div>
     <div class="tb-timer" id="tiebreakerTimer">10</div>
     <div class="tb-buttons" id="tiebreakerButtons"></div>
     <div class="tb-status" id="tiebreakerStatus"></div>
@@ -261,6 +261,33 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
 <script>
 (function() {
+  // Profanity filter — mirrors server-side profanity.py
+  const BANNED_WORDS = [
+    "nigger","nigga","chink","spic","wetback","kike","gook","coon","darkie",
+    "beaner","paki","towelhead","sandnigger","redskin","zipperhead","chinaman",
+    "bitch","whore","slut","cunt","thot",
+    "fuck","shit","dick","cock","pussy","asshole","bastard","wanker","twat",
+    "bollocks","piss","tits","boobs","penis","vagina","dildo","butthole",
+    "faggot","dyke","tranny",
+    "retard","retarded","nazi","hitler","rape","molest","pedo","pedophile","incel",
+    "admin","host","system","moderator"
+  ];
+  const SHORT_BANNED = ["ass","fag","hoe","cum","fuk","nig","god"];
+  const LEET = {'0':'o','1':'i','3':'e','4':'a','5':'s','7':'t','@':'a','$':'s','!':'i'};
+  function normName(s) {
+    s = s.toLowerCase();
+    let r = '';
+    for (let c of s) r += LEET[c] || c;
+    return r.replace(/[^a-z]/g, '');
+  }
+  function isNameBad(name) {
+    const n = normName(name);
+    if (!n) return true;
+    if (SHORT_BANNED.indexOf(n) !== -1) return true;
+    for (let w of BANNED_WORDS) { if (n.indexOf(w) !== -1) return true; }
+    return false;
+  }
+
   let playerName = '';
   let playerRole = '';
   let ws = null;
@@ -268,6 +295,18 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   let timerInterval = null;
   let currentTimerEl = null;
   let localRemaining = 0;
+  let isAnonymous = false;
+  let anonRetries = 0;
+
+  // Fetch game info to determine if anonymous mode is on
+  fetch('/api/game-info').then(r => r.json()).then(info => {
+    isAnonymous = info.anonymous;
+    if (isAnonymous) {
+      document.getElementById('nameInput').style.display = 'none';
+      document.getElementById('joinSubtitle').textContent = 'Anonymous mode — tap to join';
+      document.getElementById('btnJoin').textContent = 'JOIN GAME';
+    }
+  }).catch(() => {});
 
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -339,15 +378,22 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     switch(msg.type) {
       case 'joined':
         showScreen('Waiting');
-        document.getElementById('waitingName').textContent = msg.name;
+        document.getElementById('waitingName').textContent = isAnonymous ? '' : msg.name;
         break;
 
       case 'error':
         if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
         document.getElementById('reconnectBanner').classList.remove('visible');
+        // In anonymous mode, retry with a new name on collision
+        if (isAnonymous && anonRetries < 3) {
+          anonRetries++;
+          playerName = generateAnonName();
+          connect();
+          return;
+        }
         document.getElementById('joinError').textContent = msg.message;
         document.getElementById('btnJoin').disabled = false;
-        document.getElementById('btnJoin').textContent = 'Join Game';
+        document.getElementById('btnJoin').textContent = isAnonymous ? 'JOIN GAME' : 'Join Game';
         showScreen('Join');
         break;
 
@@ -463,17 +509,17 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
           const tbDiv = document.getElementById('tiebreakerButtons');
           tbDiv.innerHTML = '';
           document.getElementById('tiebreakerStatus').textContent = '';
-          (msg.tied_indices || []).forEach(idx => {
+          (msg.tied_members || []).forEach(member => {
             const btn = document.createElement('button');
             btn.className = 'vote-btn';
-            btn.textContent = 'Proposal ' + (idx + 1);
+            btn.textContent = member.display_name;
             btn.addEventListener('click', () => {
               if (hasVoted) return;
               hasVoted = true;
               tbDiv.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
               btn.classList.add('selected');
               document.getElementById('tiebreakerStatus').textContent = 'Vote sent!';
-              send({type: 'tiebreaker_vote', proposal_index: idx});
+              send({type: 'tiebreaker_vote', proposal_index: member.index});
             });
             tbDiv.appendChild(btn);
           });
@@ -539,13 +585,23 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     container.innerHTML = html;
   }
 
+  function generateAnonName() {
+    return 'Player-' + Math.floor(1000 + Math.random() * 9000);
+  }
+
   // Join form
   document.getElementById('joinForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const name = document.getElementById('nameInput').value.trim();
-    if (!name) { document.getElementById('joinError').textContent = 'Please enter a name.'; return; }
+    if (isAnonymous) {
+      playerName = generateAnonName();
+      anonRetries = 0;
+    } else {
+      const name = document.getElementById('nameInput').value.trim();
+      if (!name) { document.getElementById('joinError').textContent = 'Please enter a name.'; return; }
+      if (isNameBad(name)) { document.getElementById('joinError').textContent = "That name isn't allowed. Please choose a proper name."; return; }
+      playerName = name;
+    }
     document.getElementById('joinError').textContent = '';
-    playerName = name;
     document.getElementById('btnJoin').disabled = true;
     document.getElementById('btnJoin').textContent = 'Connecting...';
     connect();

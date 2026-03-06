@@ -13,7 +13,7 @@ it starts a web server that:
    - /ws/player/{name}: Each student's phone connects here
 
 3. Orchestrates the entire game flow:
-   Lobby → Role Assignment → [Writing → Voting → (Tiebreaker?) → Results] × N → Game Over
+   Lobby → Role Assignment → [Writing → Voting → Results] × N → (Tiebreaker?) → Game Over
 
 4. Runs AI tasks in parallel with human activity:
    - While parliament writes proposals → pre-generate nothing (they need focus time)
@@ -42,6 +42,7 @@ from fastapi.responses import FileResponse, StreamingResponse  # HTTP response t
 
 # ---- Project Imports ----
 import config      # Server settings, API keys, player limits
+import profanity   # Player name profanity filter
 from game import Game  # Core game state and logic
 from llm import (      # AI integration functions
     evaluate_proposals,         # AI grades parliament proposals
@@ -405,6 +406,15 @@ async def debug_state():
     }
 
 
+@app.get("/api/game-info")
+async def game_info():
+    """Return game settings relevant to the player join flow."""
+    return {
+        "anonymous": game.settings.anonymous,
+        "started": game.started,
+    }
+
+
 # ============================================================
 # Phase Management — Controls the flow of each game round
 # ============================================================
@@ -649,97 +659,104 @@ async def finish_voting():
             logger.error("AI grading timed out, using fallback")
             game.ai_evaluations = get_fallback_evaluations(len(game.parliament_members))
 
-    # Check if there's a tie (2+ proposals with the same highest vote count)
-    tied = game.detect_tie()
-    if tied and len(tied) > 1:
-        # Tie detected — start a tiebreaker vote
-        await start_tiebreaker(tied)
-        return
-
-    # No tie — determine the winner and finalize the round
+    # Determine the winner (random pick if tied) and finalize the round
     winning_index = game.determine_winner()
     await finalize_round(winning_index)
 
 
-async def start_tiebreaker(tied_indices: list[int]):
+async def start_endgame_tiebreaker(tied_names: list[str]):
     """
-    Start a tiebreaker vote between tied proposals.
+    Start an end-game tiebreaker vote between parliament members tied for 1st place.
 
-    When 2 or more proposals have the same vote count, people revote
-    between only the tied proposals. This is a short 10-second vote.
+    People vote for who they think deserves to win the parliament leaderboard.
 
     Args:
-        tied_indices: List of proposal indices that are tied
+        tied_names: List of parliament member names tied for 1st place
     """
-    # Set the game phase to tiebreaker and clear previous tiebreaker votes
     game.current_phase = "tiebreaker"
     game.tiebreaker_votes = {}
+    # Store tied names so we can resolve later
+    game.endgame_tiebreaker_names = tied_names
 
-    # Get the full proposal data for the tied proposals
-    proposals_list = game.get_proposals_list()
-    tied_names = []
-    for idx in tied_indices:
-        if idx < len(proposals_list):
-            tied_names.append(proposals_list[idx])
+    # Build tied member data for display
+    tied_members = []
+    for i, name in enumerate(tied_names):
+        tied_members.append({
+            "index": i,
+            "name": name,
+            "display_name": name if not game.settings.anonymous else f"Member {i + 1}",
+            "votes_received": game.players[name].votes_received,
+        })
 
-    # Send tiebreaker UI to the host display
+    # Send tiebreaker UI to host
     await broadcast_to_host({
         "type": "tiebreaker",
-        "tied_indices": tied_indices,
-        "tied_proposals": tied_names,
+        "tied_members": tied_members,
         "timer": game.settings.tiebreaker_time,
     })
 
     # Send tiebreaker voting buttons to people
     await broadcast_to_people({
         "type": "tiebreaker",
-        "tied_indices": tied_indices,
+        "tied_members": tied_members,
         "timer": game.settings.tiebreaker_time,
     })
 
     # Tell parliament about the tie
     await broadcast_to_parliament({
         "type": "tiebreaker",
-        "message": "It's a tie! The people are choosing between the tied proposals.",
+        "message": "It's a tie! The people are voting for the parliament winner!",
     })
 
-    # Start the short tiebreaker timer
+    # Start the tiebreaker timer
     global phase_timer_task
     phase_timer_task = asyncio.create_task(tiebreaker_timer())
 
 
 async def tiebreaker_timer():
     """
-    Short countdown timer for the tiebreaker vote (typically 10 seconds).
+    Short countdown timer for the end-game tiebreaker vote (typically 10 seconds).
 
-    When time expires, determines the winner (random if still tied)
-    and finalizes the round.
+    When time expires, resolves the tiebreaker and proceeds to game over.
     """
     remaining = game.settings.tiebreaker_time
 
-    # Count down 1 second at a time
     while remaining > 0 and not game.game_over:
         await asyncio.sleep(1)
         remaining -= 1
 
-        # Broadcast remaining time
         await broadcast_all({
             "type": "timer",
             "phase": "tiebreaker",
             "phase_remaining": remaining,
         })
 
-    # If game was terminated, stop
     if game.game_over:
         return
 
-    # If tiebreaker was already handled (all voted early), stop
     if game.current_phase != "tiebreaker":
         return
 
-    # Time's up — determine winner from tiebreaker votes (random if still tied)
-    winning_index = game.determine_winner()
-    await finalize_round(winning_index)
+    # Time's up — resolve tiebreaker and go to game over
+    await resolve_endgame_tiebreaker()
+
+
+async def resolve_endgame_tiebreaker():
+    """
+    Resolve the end-game tiebreaker: give the winner +1 vote to break the tie,
+    then proceed to game over.
+    """
+    tied_names = getattr(game, "endgame_tiebreaker_names", [])
+    if tied_names:
+        winning_idx = game.resolve_endgame_tiebreaker()
+        if isinstance(winning_idx, int) and 0 <= winning_idx < len(tied_names):
+            # Give the winner +1 vote to break the tie on the leaderboard
+            winner_name = tied_names[winning_idx]
+            game.players[winner_name].votes_received += 1
+
+    game.game_over = True
+    game.current_phase = "gameover"
+    await send_game_over()
 
 
 async def finalize_round(winning_index: int):
@@ -804,6 +821,11 @@ async def finalize_round(winning_index: int):
 
     # Check if the game should end (reached round limit OR economy collapsed)
     if game.is_game_over() or game.is_last_round():
+        # Before game over, check if parliament leaderboard has a tie for 1st place
+        tied_names = game.detect_parliament_leaderboard_tie()
+        if tied_names:
+            await start_endgame_tiebreaker(tied_names)
+            return
         game.game_over = True
         game.current_phase = "gameover"
         await send_game_over()
@@ -1012,7 +1034,7 @@ async def ws_player(ws: WebSocket, name: str):
     1. Connection: join the game (new player) or reconnect (returning player)
     2. Writing phase: receive keystroke messages from parliament members
     3. Voting phase: receive vote messages from people
-    4. Tiebreaker: receive tiebreaker votes from people
+    4. End-game tiebreaker: receive tiebreaker votes from people for parliament leaderboard
     5. Disconnection: mark player as disconnected (allows reconnection)
 
     Args:
@@ -1076,6 +1098,11 @@ async def ws_player(ws: WebSocket, name: str):
             await broadcast_to_host(game.get_lobby_state())
             # Confirm to the player they're back in
             await ws.send_text(json.dumps({"type": "joined", "name": name}))
+        elif profanity.is_name_inappropriate(name):
+            # Blocked — offensive or inappropriate name
+            await ws.send_text(json.dumps({"type": "error", "message": "That name isn't allowed. Please choose a proper name."}))
+            await ws.close()
+            return
         elif not game.add_player(name):
             # Failed to add — name is taken or lobby is full
             await ws.send_text(json.dumps({"type": "error", "message": "Name taken or game started"}))
@@ -1176,15 +1203,13 @@ async def ws_player(ws: WebSocket, name: str):
 
                     # Check if ALL people have voted in tiebreaker — end early
                     if game.all_people_tiebreaker_voted() and not game.game_over:
-                        # Guard against race condition
                         if game.current_phase != "tiebreaker":
                             continue
                         # Cancel the tiebreaker timer
                         if phase_timer_task and not phase_timer_task.done():
                             phase_timer_task.cancel()
-                        # Determine winner and finalize the round
-                        winning_index = game.determine_winner()
-                        await finalize_round(winning_index)
+                        # Resolve end-game tiebreaker and go to game over
+                        await resolve_endgame_tiebreaker()
 
     except WebSocketDisconnect:
         # Player disconnected — clean up their connection

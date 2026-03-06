@@ -15,7 +15,7 @@ Architecture note:
     This separation keeps game logic independent from WebSocket code.
 
 Game flow:
-    Lobby → Role Assignment → [Round: Writing → Voting → (Tiebreaker?) → Results] × N → Game Over
+    Lobby → Role Assignment → [Round: Writing → Voting → Results] × N → (Tiebreaker?) → Game Over
 """
 
 # ---- Standard Library Imports ----
@@ -553,39 +553,14 @@ class Game:
             counts[idx] = counts.get(idx, 0) + 1
         return counts
 
-    def detect_tie(self) -> list[int] | None:
-        """
-        Check if there's a tie in the main vote.
-
-        A tie occurs when 2 or more proposals have the same highest vote count.
-        If there's a tie, a tiebreaker round is triggered.
-
-        Returns:
-            list[int] | None: List of tied proposal indices, or None if no tie
-        """
-        counts = self.get_vote_counts()
-        if not counts:
-            return None
-        # Find the highest vote count
-        max_votes = max(counts.values())
-        if max_votes == 0:
-            return None  # Nobody voted at all
-        # Find all proposals with that highest count
-        tied = [idx for idx, count in counts.items() if count == max_votes]
-        # It's only a tie if more than one proposal has the max votes
-        if len(tied) > 1:
-            return tied
-        return None
-
     def determine_winner(self) -> int:
         """
-        Determine the winning proposal index after voting (and tiebreaker if needed).
+        Determine the winning proposal index after voting.
 
         Decision logic:
         1. If one proposal has the most votes → it wins
-        2. If there's a tie and a tiebreaker was held → use tiebreaker results
-        3. If still tied after tiebreaker → random choice among tied proposals
-        4. If nobody voted at all → random choice
+        2. If there's a tie → random choice among tied proposals
+        3. If nobody voted at all → random choice
 
         Returns:
             int: Index of the winning proposal (0-based)
@@ -605,18 +580,7 @@ class Game:
         if len(winners) == 1:
             return winners[0]
 
-        # If a tiebreaker was held, use those results
-        if self.tiebreaker_votes:
-            tb_counts = self.get_tiebreaker_vote_counts()
-            if tb_counts:
-                max_tb = max(tb_counts.values())
-                tb_winners = [idx for idx, count in tb_counts.items() if count == max_tb]
-                if len(tb_winners) == 1:
-                    return tb_winners[0]
-                # Still tied after tiebreaker — break it randomly
-                return random.choice(tb_winners)
-
-        # No tiebreaker was held (shouldn't happen normally) — random tiebreak
+        # Tied — pick randomly
         return random.choice(winners)
 
     def end_round(self, winning_index: int) -> RoundRecord:
@@ -761,6 +725,38 @@ class Game:
             bool: True if current round number >= configured num_rounds
         """
         return self.round_number >= self.settings.num_rounds
+
+    def detect_parliament_leaderboard_tie(self) -> list[str] | None:
+        """
+        Check if 2+ parliament members are tied for 1st place on total votes received.
+
+        Returns:
+            list[str] | None: List of tied parliament member names, or None if no tie
+        """
+        if not self.parliament_members:
+            return None
+        max_votes = max(self.players[name].votes_received for name in self.parliament_members)
+        if max_votes == 0:
+            return None
+        tied = [name for name in self.parliament_members if self.players[name].votes_received == max_votes]
+        if len(tied) > 1:
+            return tied
+        return None
+
+    def resolve_endgame_tiebreaker(self) -> str:
+        """
+        Resolve the end-game tiebreaker using tiebreaker_votes.
+        Each vote maps player_name -> index into the tied members list.
+        Returns the name of the winner (most tiebreaker votes, random if still tied).
+        """
+        if not self.tiebreaker_votes:
+            return ""
+        tb_counts = self.get_tiebreaker_vote_counts()
+        if not tb_counts:
+            return ""
+        max_tb = max(tb_counts.values())
+        tb_winners = [idx for idx, count in tb_counts.items() if count == max_tb]
+        return tb_winners[0] if len(tb_winners) == 1 else random.choice(tb_winners)
 
     # ============================================================
     # Data for Clients (methods that build data to send via WebSocket)

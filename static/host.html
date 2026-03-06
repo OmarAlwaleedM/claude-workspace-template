@@ -803,7 +803,9 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
   function renderTiebreaker(msg) {
     document.getElementById('phaseBadge').textContent = 'TIEBREAKER';
-    updateReporter('It\'s a tie!', 'The people must choose between the top proposals.');
+    var members = msg.tied_members || [];
+    var names = members.map(function(m) { return m.display_name; }).join(' vs ');
+    updateReporter('Parliament Tie!', names + ' — The people vote for the winner!');
   }
 
   function renderGameOver(msg) {
